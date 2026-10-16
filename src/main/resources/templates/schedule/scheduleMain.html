@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <script src="/js/common.js" th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" href="/tabler/css/tabler.min.css" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" href="/css/common.css" th:href="@{/css/common.css}">
+    <style>
+        .schedule-page { --schedule-blue: #206bc4; --schedule-muted: var(--tblr-secondary-color, #667382); }
+        .schedule-page .container-xl { max-width: 1540px; }
+        .schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+        .calendar-card { overflow: hidden; }
+        .calendar-toolbar { padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .calendar-month { font-size: 1.4rem; font-weight: 700; letter-spacing: -.04em; margin: 0; }
+        .calendar-controls { display: flex; align-items: center; gap: 8px; }
+        .calendar-icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .filter-toolbar { padding: 0 24px 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .filter-chip { border: 1px solid var(--tblr-border-color); border-radius: 100px; background: var(--tblr-bg-surface); padding: 7px 12px; font-size: .82rem; color: var(--tblr-body-color); display: inline-flex; align-items: center; gap: 7px; transition: opacity .15s, box-shadow .15s; }
+        .filter-chip[aria-pressed="false"] { opacity: .45; }
+        .filter-chip:hover { box-shadow: 0 0 0 2px rgba(32,107,196,.08); }
+        .event-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; background: var(--event-color); display: inline-block; }
+        .kind-personal { --event-color: #206bc4; --event-bg: #eaf2ff; --event-text: #1759a6; }
+        .kind-common { --event-color: #d63939; --event-bg: #ffe8e8; --event-text: #a52222; }
+        .kind-vacation { --event-color: #269774; --event-bg: #e7f5ed; --event-text: #197657; }
+        .kind-trip { --event-color: #dc8d30; --event-bg: #fff3e1; --event-text: #a66718; }
+        .kind-request { --event-color: #65748b; --event-bg: #edf0f5; --event-text: #4e6078; }
+        .calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+        .calendar-weekdays { border-top: 1px solid var(--tblr-border-color); background: var(--tblr-bg-surface-secondary, #f8fafc); }
+        .calendar-weekdays > div { padding: 12px 0; text-align: center; font-size: .8rem; color: var(--schedule-muted); font-weight: 500; }
+        .calendar-weekdays > div:first-child, .day-sunday .day-number { color: #d35a65; }
+        .calendar-weekdays > div:last-child, .day-saturday .day-number { color: #4b83be; }
+        .calendar-day { min-width: 0; min-height: 122px; padding: 8px 5px; border-top: 1px solid var(--tblr-border-color); border-right: 1px solid var(--tblr-border-color); background: var(--tblr-bg-surface); position: relative; }
+        .calendar-day:nth-child(7n) { border-right: 0; }
+        .calendar-day.is-outside { background: var(--tblr-bg-surface-secondary, #fafbfd); }
+        .calendar-day.is-outside .day-number { opacity: .35; }
+        .calendar-day.is-selected { background: rgba(32,107,196,.035); box-shadow: inset 0 0 0 2px rgba(32,107,196,.5); }
+        .day-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 3px 6px; }
+        .day-select { border: 0; background: transparent; padding: 0; border-radius: 50%; font-size: .82rem; width: 29px; height: 29px; font-weight: 500; }
+        .day-number { color: var(--tblr-body-color); }
+        .is-today .day-select { background: var(--schedule-blue); }
+        .is-today .day-number { color: #fff; }
+        .today-marker { font-size: .66rem; color: var(--schedule-blue); margin-right: 3px; }
+        .calendar-event { width: 100%; border: 0; border-left: 3px solid var(--event-color); background: var(--event-bg); color: var(--event-text); padding: 4px 6px; margin: 0 0 4px; border-radius: 4px; display: block; text-align: left; font-size: .74rem; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .calendar-event:hover { filter: brightness(.96); }
+        .calendar-event.is-continuation { border-left-style: dotted; }
+        .calendar-more { border: 0; background: transparent; color: var(--schedule-muted); font-size: .72rem; padding: 1px 7px; }
+        .calendar-footer { padding: 14px 24px; border-top: 1px solid var(--tblr-border-color); display: flex; gap: 8px; align-items: center; color: var(--schedule-muted); font-size: .78rem; }
+        .schedule-side { display: grid; gap: 20px; }
+        .side-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .selected-date { font-size: 1.15rem; font-weight: 700; letter-spacing: -.03em; margin-top: 4px; }
+        .agenda-list { display: grid; gap: 12px; margin: 18px 0; }
+        .agenda-item { width: 100%; display: flex; gap: 12px; align-items: start; border: 1px solid var(--tblr-border-color); border-radius: 8px; background: var(--tblr-bg-surface); padding: 14px; text-align: left; color: var(--tblr-body-color); }
+        .agenda-item:hover { border-color: var(--event-color); }
+        .agenda-mark { background: var(--event-bg); color: var(--event-text); border-radius: 7px; display: flex; justify-content: center; align-items: center; width: 34px; height: 34px; flex-shrink: 0; }
+        .agenda-copy { min-width: 0; flex: 1; }
+        .agenda-title { font-size: .86rem; font-weight: 600; overflow-wrap: anywhere; }
+        .agenda-date { color: var(--schedule-muted); font-size: .74rem; margin-top: 5px; }
+        .agenda-label { font-size: .68rem; color: var(--event-text); margin-top: 5px; }
+        .empty-agenda { text-align: center; padding: 24px 4px; color: var(--schedule-muted); font-size: .85rem; }
+        .empty-agenda svg { width: 36px; height: 36px; opacity: .4; margin-bottom: 12px; }
+        .upcoming-row { display: flex; align-items: start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--tblr-border-color); background: transparent; border-top: 0; border-right: 0; border-left: 0; width: 100%; text-align: left; color: var(--tblr-body-color); }
+        .upcoming-row:last-child { border-bottom: 0; padding-bottom: 0; }
+        .upcoming-day { min-width: 32px; text-align: center; font-size: 1.15rem; font-weight: 600; line-height: 1.1; }
+        .upcoming-month { display: block; font-size: .67rem; font-weight: 400; color: var(--schedule-muted); margin-top: 4px; }
+        .schedule-help { color: var(--schedule-muted); font-size: .79rem; line-height: 1.75; padding: 0 3px; }
+        .schedule-demo { border: 1px solid #cce0f6; background: #eff6ff; color: #31618d; border-radius: 8px; padding: 10px 14px; font-size: .8rem; margin-bottom: 20px; }
+        .schedule-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+        .event-detail-summary { background: var(--event-bg); border-left: 3px solid var(--event-color); border-radius: 6px; padding: 18px; color: var(--event-text); }
+        .event-detail-title { font-size: 1.2rem; font-weight: 650; overflow-wrap: anywhere; margin: 8px 0; }
+        .schedule-page button:focus-visible { outline: 3px solid rgba(32,107,196,.6); outline-offset: 2px; }
+        [data-bs-theme="dark"] .schedule-page { --schedule-blue: #75a9ff; }
+        [data-bs-theme="dark"] .schedule-page .kind-personal { --event-bg: #203149; --event-text: #a6c8ff; }
+        [data-bs-theme="dark"] .schedule-page .kind-common { --event-bg: #482323; --event-text: #ffb4b4; }
+        [data-bs-theme="dark"] .schedule-page .kind-vacation { --event-bg: #1d3b30; --event-text: #9ed6be; }
+        [data-bs-theme="dark"] .schedule-page .kind-trip { --event-bg: #42321f; --event-text: #efc78e; }
+        [data-bs-theme="dark"] .schedule-page .kind-request { --event-bg: #2b3440; --event-text: #bccadd; }
+        [data-bs-theme="dark"] .schedule-demo { background: #1e3047; border-color: #354964; color: #b2cbea; }
+        @media (min-width: 1800px) { .calendar-day { min-height: 138px; } }
+        @media (max-width: 1199px) { .schedule-layout { grid-template-columns: minmax(0, 1fr); } .schedule-side { grid-template-columns: 1fr 1fr; } .schedule-help { grid-column: 1 / -1; } }
+        @media (max-width: 575px) { .calendar-controls { flex-wrap: wrap; } .calendar-toolbar { padding: 16px 12px; } .calendar-month { font-size: 1.2rem; } .filter-toolbar { padding: 0 12px 14px; gap: 6px; } .filter-chip { padding: 5px 9px; font-size: .73rem; } .calendar-day { min-height: 107px; padding: 5px 2px; } .calendar-event { font-size: .65rem; padding: 3px; border-left-width: 2px; } .day-heading { padding: 0 0 5px; } .today-marker { display: none; } .schedule-side { grid-template-columns: 1fr; } .calendar-footer { padding: 12px; } }
+        @media (prefers-reduced-motion: reduce) { .schedule-page *, .modal.fade .modal-dialog { transition: none !important; } }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('schedule')}"></div>
+
+    <main class="page-wrapper schedule-page">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- ////////////////////////// 상단 /////////////////////////////-->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-3 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">MY CALENDAR</div>
+                        <h1 class="page-title">일정</h1>
+                        <div class="text-secondary mt-2">나의 일정과 회사의 일정을 한눈에 확인하세요.</div>
+                    </div>
+
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-primary" id="newSchedule">
+                            <svg class="calendar-icon me-2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>일정 등록
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ////////////////////////// 바디 /////////////////////////////-->
+        <div class="page-body">
+            <div class="container-xl">
+
+                <div class="schedule-layout">
+                    <!-- 왼쪽 달력 -->
+                    <section class="card calendar-card" aria-label="월간 일정 달력">
+                        <div class="calendar-toolbar">
+                            <!-- 연월 제목 + 일정 개수 -->
+                            <div class="d-flex align-items-center gap-3">
+                                <h2 class="calendar-month" id="monthTitle" aria-live="polite"></h2>
+                                <span class="badge bg-blue-lt" id="monthCount"></span>
+                            </div>
+
+                            <!-- 이전 달, 다음 달 버튼 -->
+                            <div class="calendar-controls">
+                                <button type="button" class="btn btn-icon btn-sm" id="previousMonth" aria-label="이전 달">
+                                    <svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="m14 6-6 6 6 6"/>
+                                    </svg>
+                                </button>
+
+                                <button type="button" class="btn btn-icon btn-sm" id="nextMonth" aria-label="다음 달">
+                                    <svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="m10 6 6 6-6 6"/>
+                                    </svg>
+                                </button>
+
+                                <!-- 오늘 버튼 -->
+                                <button type="button" class="btn btn-sm ms-1" id="goToday">오늘</button>
+
+                                <!-- 년도, 월 선택 -->
+                                <label class="visually-hidden" for="monthPicker">연도와 월 선택</label>
+                                <input type="month" id="monthPicker" class="form-control form-control-sm" style="max-width:150px" aria-label="연도와 월 선택" min="1900-01" max="9998-12">
+                            </div>
+                        </div>
+
+                        <!-- 개인, 공동, 휴가, 출장, 품의서 선택 -->
+                        <div class="filter-toolbar" aria-label="일정 종류 필터">
+                            <button type="button" class="filter-chip kind-personal" data-filter="personal" aria-pressed="true">
+                                <span class="event-dot"></span>개인
+                            </button>
+                            <button type="button" class="filter-chip kind-common" data-filter="common" aria-pressed="true">
+                                <span class="event-dot"></span>공동
+                            </button>
+                            <button type="button" class="filter-chip kind-vacation" data-filter="vacation" aria-pressed="true">
+                                <span class="event-dot"></span>휴가
+                            </button>
+                            <button type="button" class="filter-chip kind-trip" data-filter="trip" aria-pressed="true">
+                                <span class="event-dot"></span>출장
+                            </button>
+                        </div>
+
+                        <div class="calendar-weekdays" aria-hidden="true">
+                            <div>일</div>
+                            <div>월</div>
+                            <div>화</div>
+                            <div>수</div>
+                            <div>목</div>
+                            <div>금</div>
+                            <div>토</div>
+                        </div>
+
+                        <!-- 달력표 출력 -->
+                        <div class="calendar-grid" id="calendarGrid"></div>
+
+                        <div class="calendar-footer">
+                            <svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M12 11v5M12 7v.01"/>
+                            </svg>날짜를 선택하면 오른쪽에서 해당 날짜의 일정을 확인할 수 있습니다.
+                        </div>
+                    </section>
+
+                    <!-- 사이드 일정 등록 -->
+                    <aside class="schedule-side" aria-label="선택 날짜와 다가오는 일정">
+                        <!-- 이 날짜에 일정 등록 -->
+                        <section class="card">
+                            <div class="card-body">
+                                <div class="side-heading">
+                                    <span class="text-secondary small">선택한 날짜</span>
+                                    <span class="badge bg-blue-lt" id="selectedDayCount"></span>
+                                </div>
+
+                                <h2 class="selected-date" id="selectedDateTitle"></h2>
+
+                                <div class="agenda-list" id="selectedAgenda" aria-live="polite"></div>
+
+                                <button type="button" class="btn w-100" id="newSelectedSchedule">
+                                    <svg class="calendar-icon me-2" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 5v14M5 12h14"/>
+                                    </svg>이 날짜에 일정 등록
+                                </button>
+                            </div>
+                        </section>
+
+                        <!-- 다가오는 일정 -->
+                        <section class="card">
+                            <div class="card-body">
+                                <h2 class="card-title mb-1">다가오는 일정</h2>
+                                <div class="text-secondary small mb-2">오늘부터 예정된 일정</div>
+                                <div id="upcomingAgenda"></div>
+                            </div>
+                        </section>
+
+                        <div class="schedule-help">
+                            개인 일정은 본인에게만 공개됩니다.<br>
+                            공동 일정은 모든 구성원이 볼 수 있습니다.<br>
+                            승인된 휴가·출장·품의서는 자동 반영됩니다.
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+
+        <!-- ////////////////////////// 일정등록 버튼 폼(모달) /////////////////////////////-->
+        <div class="modal modal-blur fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h2 class="modal-title" id="scheduleModalTitle">일정 등록</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+
+                    <form th:action="@{/insertSchedule}" method="post" id="scheduleForm">
+                        <div class="modal-body">
+                            <div class="alert alert-danger" id="formError" role="alert" hidden>에러 메세지용</div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="scheduleType">공개 범위</label>
+                                    <select class="form-select" id="scheduleType" name="scheduleType">
+                                        <option value="PERSONAL">개인 일정 · 나만 보기</option>
+                                        <option value="COMMON" id="commonOption">공동 일정 · 모든 구성원</option>
+                                    </select>
+                                <div class="form-hint" id="scopeHint">본인만 조회하고 수정할 수 있습니다.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label required" for="scheduleTitle">제목</label>
+                                <input type="text" class="form-control" id="scheduleTitle" name="scheduleTitle" required maxlength="300" placeholder="일정 제목을 입력하세요">
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label required" for="scheduleStart">시작일</label>
+                                    <input type="date" class="form-control" id="scheduleStart" name="scheduleStart" required min="1900-01-01" max="9998-12-31">
+                                </div>
+
+                                <div class="col-6">
+                                    <label class="form-label required" for="scheduleEnd">종료일</label>
+                                    <input type="date" class="form-control" id="scheduleEnd" name="scheduleEnd" required min="1900-01-01" max="9998-12-31">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label" for="scheduleContent">
+                                    내용<span class="text-secondary fw-normal">(선택)</span>
+                                </label>
+                                <textarea class="form-control" id="scheduleContent" name="scheduleContent" rows="4" maxlength="3000" placeholder="필요한 내용을 기록하세요."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn" data-bs-dismiss="modal">취소</button>
+                            <button type="submit" class="btn btn-primary" id="saveSchedule">등록</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ////////////////////////// 다가오는 일정 /////////////////////////////-->
+        <div class="modal modal-blur fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title" id="detailModalTitle">일정 상세</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="detailSummary" class="event-detail-summary">
+                            <div class="small" id="detailKind"></div>
+                            <div class="event-detail-title" id="detailTitle"></div>
+                            <div id="detailDates"></div>
+                        </div>
+
+                        <div class="schedule-description mt-3" id="detailContent"></div>
+                        <div class="text-secondary small mt-3" id="detailNotice"></div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger me-auto" id="deleteSchedule">삭제</button>
+                        <button type="button" class="btn" data-bs-dismiss="modal">닫기</button>
+                        <button type="button" class="btn btn-primary" id="editSchedule">수정</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title" id="deleteModalTitle">일정 삭제</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        이 일정을 삭제할까요?
+                        <div class="fw-semibold mt-2 text-break" id="deleteTitle"></div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn" id="cancelDelete">취소</button>
+                        <button type="button" class="btn btn-danger" id="confirmDelete">삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090">
+            <div class="toast" id="scheduleToast" role="status" aria-live="polite" aria-atomic="true">
+                <div class="toast-body" id="toastMessage"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+
+<script src="/tabler/js/tabler.min.js" th:src="@{/tabler/js/tabler.min.js}"></script>
+<script th:inline="javascript">
+
+    (() => {
+        'use strict';
+
+        // ============================================================
+        // 1. 컨트롤러에서 받은 데이터
+        // ============================================================
+        const currentEmployeeId = /*[[${loginEmployee.employeeId}]]*/ null;
+        const currentRole = /*[[${loginEmployee.role}]]*/ 'ADMIN';
+
+        // 컨트롤러의 scheduleList를 받습니다. 일정은 initialSchedules → schedules → render() 순서로 표시됩니다.
+        const initialSchedules = /*[[${scheduleList ?: {}}]]*/ []; // 컨트롤러부터 받은 조회한 일정 데이터
+
+
+        // ============================================================
+        // 2. 화면 도구와 일정 유형 이름
+        // ============================================================
+        const UI = window.tabler || window.bootstrap;
+        const $ = id => document.getElementById(id);
+        const modal = UI.Modal.getOrCreateInstance($('scheduleModal')); // 등록·수정 모달 인스턴스
+        const detailModal = UI.Modal.getOrCreateInstance($('detailModal'));
+        const deleteModal = UI.Modal.getOrCreateInstance($('deleteModal'));
+        const toast = UI.Toast.getOrCreateInstance($('scheduleToast'), {delay: 2600});
+        const isAdmin = currentRole === 'ADMIN';
+        const approvalTitles = {
+            VACATION: '휴가',
+            BUSINESS_TRIP: '출장',
+            APPROVAL_REQUEST: '품의서'
+        };
+        const names = {
+            personal: '개인 일정',
+            common: '공동 일정',
+            vacation: '휴가',
+            trip: '출장',
+            request: '품의서'
+        };
+
+        // ============================================================
+        // 3. 날짜 처리와 오늘 날짜
+        // ============================================================
+
+        // 날짜를 시간대 변환 없이 yyyy-MM-dd 문자열로 만듭니다.
+        const localKey = date =>
+            `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+        const toDate = key => {
+            const [y, m, d] = key.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
+
+        const addDays = (key, count) => {
+            const date = toDate(key);
+            date.setDate(date.getDate() + count);
+            return localKey(date);
+        };
+
+        const dateLabel = key => {
+            const [y, m, d] = key.split('-').map(Number);
+            return `${y}년 ${m}월 ${d}일`;
+        };
+
+        const dateRange = item =>
+            item.scheduleStart === item.scheduleEnd
+                ? dateLabel(item.scheduleStart)
+                : `${dateLabel(item.scheduleStart)} ~ ${dateLabel(item.scheduleEnd)}`;
+
+        const seoulParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(new Date());
+
+        const part = type => seoulParts.find(p => p.type === type).value;
+
+        const today = `${part('year')}-${part('month')}-${part('day')}`;
+
+        // ============================================================
+        // 4. 현재 화면 상태와 일정 배열
+        // ============================================================
+        const activeFilters = new Set(Object.keys(names));
+
+        // 선택한 날짜, 표시 중인 월, 수정·상세 보기 중인 일정 번호를 기억합니다.
+        let selectedDate = today;
+        let displayedMonth = new Date(toDate(today).getFullYear(), toDate(today).getMonth(), 1);
+        let editingId = null;
+        let detailedId = null;
+        let nextId = -100;
+
+        // 받은 배열을 복사하고 일정 번호를 숫자로 맞춥니다. item은 일정 한 개입니다.
+        let schedules = Array.isArray(initialSchedules)
+            ? initialSchedules.map(item => ({ // item: 일정 데이터 하나를 받는 임시 매개변수, .map(): 배열의 데이터를 하나씩 받아서 처리한 결과를 새 배열로 만드는 메서드.
+                ...item, // ...item: item을 복사받아 임시로 담는 새 객체
+                scheduleId: Number(item.scheduleId)
+            }))
+            : [];
+
+
+        // ============================================================
+        // 5. 일정 유형·제목·권한·필터 처리
+        // ============================================================
+        const kind = item => {
+            if (item.scheduleType === 'PERSONAL') {
+                return 'personal';
+            }
+
+            if (item.scheduleType === 'COMMON') {
+                return 'common';
+            }
+
+            if (item.scheduleType === 'APPROVAL') {
+                if (item.scheduleTitle === '휴가') {
+                    return 'vacation';
+                }
+
+                if (item.scheduleTitle === '출장') {
+                    return 'trip';
+                }
+            }
+
+            if (item.scheduleType === 'COMMON') {
+                return 'common';
+            }
+        };
+
+        const title = item => item.scheduleTitle;
+
+        const canRead = item =>
+            item.scheduleType === 'COMMON' || Number(item.employeeId) === Number(currentEmployeeId);
+
+        const canEdit = item =>
+            item &&
+            (item.scheduleType === 'PERSONAL'
+                ? Number(item.employeeId) === Number(currentEmployeeId)
+                : item.scheduleType === 'COMMON' && isAdmin);
+
+        // 현재 사용자에게 보이며, 선택한 유형 필터에 맞는 일정만 반환합니다.
+        const visible = () =>
+            schedules.filter(item => canRead(item) && activeFilters.has(kind(item)));
+
+        const sortEvents = (a, b) =>
+            a.scheduleStart.localeCompare(b.scheduleStart) ||
+            String(title(a)).localeCompare(String(title(b)), 'ko');
+
+        // ============================================================
+        // 6. HTML 요소 생성과 알림
+        // ============================================================
+        const make = (tag, className, text) => {
+            const element = document.createElement(tag);
+
+            if (className) element.className = className;
+            if (text !== undefined) element.textContent = text;
+
+            return element;
+        };
+
+        function calendarIcon() {
+            const span = make('span', 'agenda-mark');
+
+            span.innerHTML =
+                '<svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16"/></svg>';
+
+            return span;
+        }
+
+        function emptyState(message) {
+            const box = make('div', 'empty-agenda');
+
+            box.innerHTML =
+                '<svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16M9 16h6"/></svg>';
+
+            box.append(make('div', '', message));
+
+            return box;
+        }
+
+        function notify(message) {
+            $('toastMessage').textContent = message;
+            toast.show();
+        }
+
+        // ============================================================
+        // 7. 날짜 선택과 달력 화면 표시
+        // ============================================================
+        function chooseDay(key) {
+            selectedDate = key;
+
+            const date = toDate(key);
+            displayedMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+
+            render();
+        }
+
+        // 일정 목록을 받아 달력, 선택한 날짜의 일정, 다가오는 일정을 그립니다.
+        function render() {
+            const year = displayedMonth.getFullYear(), // 현재 표시 중인 연도
+                month = displayedMonth.getMonth();
+
+            const first = localKey(new Date(year, month, 1)),
+                  last = localKey(new Date(year, month + 1, 0));
+
+            // 7-1. 표시할 일정을 고르고, 월 제목과 일정 개수를 갱신합니다.
+            const events = visible().sort(sortEvents);
+
+            $('monthTitle').textContent = `${year}년 ${month + 1}월`;
+            $('monthPicker').value = `${year}-${String(month + 1).padStart(2, '0')}`;
+            $('monthCount').textContent =
+                `${events.filter(item => item.scheduleStart <= last && item.scheduleEnd >= first).length}개 일정`;
+
+            $('previousMonth').disabled = year === 1900 && month === 0;
+            $('nextMonth').disabled = year === 9998 && month === 11;
+
+            // 7-2. 날짜 칸 42개를 만들고 각 날짜에 해당하는 일정을 넣습니다.
+            const cursor = new Date(year, month, 1);
+            cursor.setDate(cursor.getDate() - cursor.getDay());
+
+            const grid = document.createDocumentFragment();
+
+            for (let i = 0; i < 42; i++) {
+                const key = localKey(cursor),
+                    items = events.filter(item => item.scheduleStart <= key && item.scheduleEnd >= key);
+
+                const day = make('div', 'calendar-day');
+
+                if (cursor.getMonth() !== month) day.classList.add('is-outside');
+                if (cursor.getDay() === 0) day.classList.add('day-sunday');
+                if (cursor.getDay() === 6) day.classList.add('day-saturday');
+                if (key === today) day.classList.add('is-today');
+                if (key === selectedDate) day.classList.add('is-selected');
+
+                day.dataset.date = key;
+
+                const heading = make('div', 'day-heading'),
+                    dayButton = make('button', 'day-select');
+
+                dayButton.type = 'button';
+                dayButton.append(make('span', 'day-number', cursor.getDate()));
+
+                dayButton.setAttribute(
+                    'aria-label',
+                    `${dateLabel(key)}, 일정 ${items.length}개${key === today ? ', 오늘' : ''}`
+                );
+
+                dayButton.setAttribute('aria-pressed', String(key === selectedDate));
+                dayButton.addEventListener('click', () => chooseDay(key));
+
+                heading.append(dayButton);
+
+                if (key === today) {
+                    heading.append(make('span', 'today-marker', '오늘'));
+                }
+
+                day.append(heading);
+
+                items.slice(0, 3).forEach(item => {
+                    const button = make('button', `calendar-event kind-${kind(item)}`, title(item));
+
+                    button.type = 'button';
+
+                    if (item.scheduleStart < key) {
+                        button.classList.add('is-continuation');
+                    }
+
+                    button.title = `${title(item)} · ${dateRange(item)}`;
+                    button.setAttribute('aria-label', button.title);
+
+                    button.addEventListener('click', () => {
+                        chooseDay(key);
+                        openDetail(item.scheduleId);
+                    });
+
+                    day.append(button);
+                });
+
+                if (items.length > 3) {
+                    const more = make('button', 'calendar-more', `+${items.length - 3}개 더보기`);
+
+                    more.type = 'button';
+                    more.addEventListener('click', () => chooseDay(key));
+
+                    day.append(more);
+                }
+
+                day.addEventListener('click', event => {
+                    if (!event.target.closest('button')) chooseDay(key);
+                });
+
+                grid.append(day);
+                cursor.setDate(cursor.getDate() + 1);
+            }
+
+            $('calendarGrid').replaceChildren(grid); // 기존 날짜 칸을 제거하고 grid에 모아둔 새 날짜 칸을 넣습니다.
+
+            // 7-3. 선택한 날짜의 일정 목록을 오른쪽에 표시합니다.
+            const weekday = ['일', '월', '화', '수', '목', '금', '토'][toDate(selectedDate).getDay()];
+
+            $('selectedDateTitle').textContent = `${dateLabel(selectedDate)} (${weekday})`;
+
+            const selected = events.filter(
+                item => item.scheduleStart <= selectedDate && item.scheduleEnd >= selectedDate
+            );
+
+            $('selectedDayCount').textContent = `${selected.length}`;
+            $('selectedAgenda').replaceChildren();
+
+            if (!selected.length) {
+                $('selectedAgenda').append(emptyState('등록된 일정이 없습니다.'));
+            }
+
+            selected.forEach(item => {
+                const button = make('button', `agenda-item kind-${kind(item)}`);
+                button.type = 'button';
+
+                const copy = make('div', 'agenda-copy');
+
+                copy.append(
+                    make('div', 'agenda-title', title(item)),
+                    make('div', 'agenda-date', dateRange(item))
+                );
+
+                if (item.scheduleType !== 'APPROVAL') {
+                    copy.append(make('div', 'agenda-label', names[kind(item)]));
+                }
+
+                button.append(calendarIcon(), copy);
+                button.addEventListener('click', () => openDetail(item.scheduleId));
+
+                $('selectedAgenda').append(button);
+            });
+
+            // 7-4. 다가오는 일정 목록을 표시합니다.
+            $('upcomingAgenda').replaceChildren();
+
+            const upcoming = events
+                .filter(item => item.scheduleEnd >= today)
+                .sort((a, b) => {
+                    const startA = a.scheduleStart < today ? today : a.scheduleStart;
+                    const startB = b.scheduleStart < today ? today : b.scheduleStart;
+
+                    return startA.localeCompare(startB) || sortEvents(a, b);
+                })
+                .slice(0, 5);
+
+            if (!upcoming.length) {
+                $('upcomingAgenda').append(emptyState('다가오는 일정이 없습니다.'));
+            }
+
+            upcoming.forEach(item => {
+                const start = item.scheduleStart < today ? today : item.scheduleStart;
+
+                const d = toDate(start),
+                    button = make('button', `upcoming-row kind-${kind(item)}`);
+
+                button.type = 'button';
+
+                const marker = make('div', 'upcoming-day', d.getDate());
+                marker.append(make('span', 'upcoming-month', `${d.getMonth() + 1}월`));
+
+                const copy = make('div', 'agenda-copy');
+
+                copy.append(
+                    make('div', 'agenda-title', title(item)),
+                    make('div', 'agenda-date', dateRange(item))
+                );
+
+                button.append(marker, copy);
+
+                button.addEventListener('click', () => {
+                    chooseDay(start);
+                    openDetail(item.scheduleId);
+                });
+
+                $('upcomingAgenda').append(button);
+            });
+        }
+
+        // ============================================================
+        // 8. 등록·수정·상세 모달 처리
+        // ============================================================
+        function updateScopeHint() {
+            $('scopeHint').textContent =
+                $('scheduleType').value === 'COMMON'
+                    ? '모든 구성원이 조회하고, 관리자가 수정·삭제할 수 있습니다.'
+                    : '본인만 조회하고 수정할 수 있습니다.';
+        }
+
+        function prepareForm(item) {
+            editingId = item ? item.scheduleId : null;
+
+            $('scheduleForm').reset();
+            $('formError').hidden = true;
+
+            $('scheduleModalTitle').textContent = item ? '일정 수정' : '일정 등록';
+            $('saveSchedule').textContent = item ? '저장' : '등록';
+
+            $('scheduleType').value = item ? item.scheduleType : 'PERSONAL';
+            $('scheduleTitle').value = item ? item.scheduleTitle : '';
+            $('scheduleStart').value = item ? item.scheduleStart : selectedDate;
+            $('scheduleEnd').value = item ? item.scheduleEnd : selectedDate;
+            $('scheduleContent').value = item ? item.scheduleContent || '' : '';
+
+            $('scheduleEnd').min = $('scheduleStart').value;
+            $('scheduleType').disabled = Boolean(item);
+
+            updateScopeHint();
+        }
+
+        function openCreate() {
+            prepareForm(null); // 수정이면 기존 값을 채우고, 등록이면 입력란을 초기화합니다.
+            modal.show(); // 모달 띄움
+        }
+
+        function openDetail(id) {
+            const item = schedules.find(item => item.scheduleId === id && canRead(item));
+
+            if (!item) return;
+
+            detailedId = id;
+
+            const editable = canEdit(item);
+
+            $('detailSummary').className = `event-detail-summary kind-${kind(item)}`;
+            $('detailKind').textContent =
+                item.scheduleType === 'APPROVAL' ? '승인된 일정' : names[kind(item)];
+
+            $('detailTitle').textContent = title(item);
+            $('detailDates').textContent = dateRange(item);
+
+            $('detailContent').textContent =
+                item.scheduleType === 'APPROVAL' ? '' : item.scheduleContent || '';
+
+            $('detailContent').hidden = !$('detailContent').textContent;
+
+            $('detailNotice').textContent =
+                item.scheduleType === 'APPROVAL'
+                    ? '전자결재 승인에 따라 자동 반영된 일정입니다.'
+                    : item.scheduleType === 'COMMON'
+                        ? '모든 구성원이 볼 수 있는 공동 일정입니다.'
+                        : '본인만 볼 수 있는 개인 일정입니다.';
+
+            $('editSchedule').hidden = !editable;
+            $('deleteSchedule').hidden = !editable;
+
+            detailModal.show();
+        } // end openDetail(id)
+
+        function switchModal(fromId, toInstance) {
+            $(fromId).addEventListener('hidden.bs.modal', () => toInstance.show(), {
+                once: true
+            });
+
+            UI.Modal.getOrCreateInstance($(fromId)).hide();
+        }
+
+        // ============================================================
+        // 9. 사용자 이벤트 연결
+        // ============================================================
+
+        // 등록 폼 제출: 입력 검사 → 서버에 전송 → 일정 배열에 추가 → 화면 갱신
+        $('scheduleForm').addEventListener('submit', async event => {
+
+            event.preventDefault(); // submit 기본 동작 막음(폼의 기본 전송과 페이지 이동 막음)
+
+            const type = $('scheduleType').value,
+                heading = $('scheduleTitle').value.trim(),
+                start = $('scheduleStart').value,
+                end = $('scheduleEnd').value,
+                content = $('scheduleContent').value.trim();
+
+            const old = schedules.find(item => item.scheduleId === editingId); // 수정 기능 관련
+
+            let error = '';
+
+            if (!heading) {
+                error = '제목을 입력해주세요.';
+            } else if (!start || !end || start > end) {
+                error = '종료일은 시작일과 같거나 이후여야 합니다.';
+            } else if (!['PERSONAL', 'COMMON'].includes(type) || (type === 'COMMON' && !isAdmin)) {
+                error = '공동 일정은 관리자만 등록할 수 있습니다.';
+            } else if (editingId !== null && !canEdit(old)) {
+                error = '이 일정을 수정할 수 없습니다.';
+            }
+
+            if (error) {
+                $('formError').textContent = error;
+                $('formError').hidden = false;
+                return;
+            }
+
+            // 폼 데이터 변수에 저장
+            const item = {
+                scheduleId: editingId ?? nextId--,
+                employeeId: old ? old.employeeId : currentEmployeeId,
+                approvalId: null,
+                scheduleType: type,
+                scheduleTitle: heading,
+                scheduleContent: content,
+                scheduleStart: start,
+                scheduleEnd: end
+            };
+
+            // JSON으로 데이터 전송 및 DB 저장
+            try {
+                const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                const url = editingId === null ? "/insertSchedule" : "/updateSchedule";
+
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({
+                        scheduleId: item.scheduleId,
+                        scheduleType: item.scheduleType,
+                        scheduleTitle: item.scheduleTitle,
+                        scheduleContent: item.scheduleContent,
+                        scheduleStart: item.scheduleStart,
+                        scheduleEnd: item.scheduleEnd
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`일정 등록 실패: HTTP ${response.status}`);
+                }
+
+                // 등록 성공 후 DB의 실제 일정 번호로 다시 조회
+                if (editingId === null) {
+                    window.location.reload();
+                    return;
+                }
+
+            } catch (error) {
+                console.error(error);
+                notify('일정 등록에 실패했습니다.');
+                return; // 여기서 submit 함수 종료 → 아래 코드 실행 안 함
+            }
+
+            // null이면 schedule 배열에 추가
+            if (editingId === null) {
+                schedules.push(item); // null이면 새 일정이므로 schedule 배열에 추가
+            } else {
+                schedules = schedules.map(record => (record.scheduleId === editingId ? item : record));
+            }
+
+            activeFilters.add(kind(item)); // 일정 등록 시 일정표에 어느 유형으로 표시해둘지에 대한 코드
+
+            document.querySelector(`[data-filter="${kind(item)}"]`).setAttribute('aria-pressed', 'true');
+
+            chooseDay(start);
+            modal.hide();
+
+            notify(editingId === null ? '일정이 등록되었습니다.' : '일정이 수정되었습니다.');
+
+        });
+
+        $('newSchedule').addEventListener('click', openCreate); // 일정버튼 아이콘 클릭 openCreate 실행
+
+        $('newSelectedSchedule').addEventListener('click', openCreate);
+
+        // 이전 달로 이동합니다.
+        $('previousMonth').addEventListener('click', () => {
+            displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() - 1, 1); // 보고 있는 현재 년도, 보여줄 이전 달, 1일의 데이터를 저장
+            selectedDate = localKey(displayedMonth);
+
+            render(); // 이전 달 클릭해서 달력을 렌더링할 경우 변수의 스코프에 의해 displayedMonth의 값을 불러올 수 있다.
+        });
+
+        // 다음 달로 이동합니다.
+        $('nextMonth').addEventListener('click', () => {
+            displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 1);
+            selectedDate = localKey(displayedMonth);
+
+            render();
+        });
+
+        $('goToday').addEventListener('click', () => chooseDay(today));
+
+        $('monthPicker').addEventListener('change', event => {
+            const value = event.target.value;
+
+            if (!/^\d{4}-\d{2}$/.test(value)) return;
+
+            const [y, m] = value.split('-').map(Number);
+
+            if (y < 1900 || y > 9998 || m < 1 || m > 12) return;
+
+            chooseDay(`${value}-01`);
+        });
+
+        document.querySelectorAll('[data-filter]').forEach(button =>
+            button.addEventListener('click', () => {
+                const k = button.dataset.filter;
+
+                if (activeFilters.has(k)) {
+                    activeFilters.delete(k);
+                } else {
+                    activeFilters.add(k);
+                }
+
+                button.setAttribute('aria-pressed', String(activeFilters.has(k)));
+
+                render();
+            })
+        );
+
+        $('scheduleType').addEventListener('change', updateScopeHint);
+
+        $('scheduleStart').addEventListener('change', () => {
+            $('scheduleEnd').min = $('scheduleStart').value || '1900-01-01';
+
+            if ($('scheduleEnd').value < $('scheduleStart').value) {
+                $('scheduleEnd').value = $('scheduleStart').value;
+            }
+        });
+
+        $('scheduleModal').addEventListener('shown.bs.modal', () => $('scheduleTitle').focus());
+
+        // 일정 수정 버튼 이벤트
+        $('editSchedule').addEventListener('click', () => {
+            const item = schedules.find(item => item.scheduleId === detailedId);
+
+            if (!canEdit(item)) return;
+
+            prepareForm(item);
+            switchModal('detailModal', modal);
+        });
+
+        // 상세 화면에서 삭제 확인 모달 열기
+        $('deleteSchedule').addEventListener('click', () => {
+            const item = schedules.find(item => item.scheduleId === detailedId);
+
+            if (!canEdit(item)) return;
+
+            $('deleteTitle').textContent = title(item);
+            switchModal('detailModal', deleteModal);
+        });
+
+        $('cancelDelete').addEventListener('click', () => switchModal('deleteModal', detailModal));
+
+        // 일정 삭제 처리
+        $('confirmDelete').addEventListener('click', async () => {
+            const item = schedules.find(
+                item => item.scheduleId === detailedId
+            );
+
+            if (!canEdit(item)) return;
+
+            try {
+                const csrfToken =
+                    document.querySelector('meta[name="_csrf"]').content;
+                const csrfHeader =
+                    document.querySelector('meta[name="_csrf_header"]').content;
+
+                const response = await fetch("/deleteSchedule", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({
+                        scheduleId: item.scheduleId,
+                        scheduleType: item.scheduleType
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`일정 삭제 실패: HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error(error);
+                notify('일정 삭제에 실패했습니다.');
+                return;
+            }
+
+            schedules = schedules.filter(
+                record => record.scheduleId !== item.scheduleId
+            );
+
+            deleteModal.hide();
+            render();
+            notify('일정이 삭제되었습니다.');
+        });
+
+        // ============================================================
+        // 10. 최초 화면 설정과 실행
+        // ============================================================
+        $('commonOption').hidden = !isAdmin;
+
+        $('commonOption').disabled = !isAdmin;
+
+        // 이벤트를 모두 연결한 뒤 처음 한 번 달력을 표시합니다.
+
+        render();
+    })();
+</script>
+</body>
+</html>

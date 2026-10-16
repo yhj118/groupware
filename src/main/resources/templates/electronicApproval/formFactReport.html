@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        .approval-form { max-width: 980px; margin: 0 auto; }
+        .required::after { margin-left: 3px; color: var(--tblr-danger); content: "*"; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="page-pretitle">Approval</div>
+                <h2 class="page-title">경위/시말서 작성</h2>
+            </div>
+        </div>
+        <div class="page-body">
+            <div class="container-xl">
+                <form th:action="@{/writeFactReport}" method="post" enctype="multipart/form-data" class="card approval-form">
+                    <div class="card-header"><h3 class="card-title">경위/시말서</h3></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">소속 부서</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentType}"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">소속 팀</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentName}"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">작성자</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.employeeName}"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label required">작성일</label>
+                                <input type="date" class="form-control" name="factReportWriteDate" th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" readonly>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">제목</label>
+                                <input type="text" class="form-control" name="factReportTitle" placeholder="사건 또는 사고 제목을 입력하세요">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">발생 일시</label>
+                                <input type="datetime-local" class="form-control" name="factReportOccurrence">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">발생 장소</label>
+                                <input type="text" class="form-control" name="factReportLocation" placeholder="발생 장소를 입력하세요">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">발생 경위</label>
+                                <textarea class="form-control" name="factReportInspector" rows="7" placeholder="사실에 근거하여 발생 경위를 시간순으로 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">원인 및 책임</label>
+                                <textarea class="form-control" name="factReportCause" rows="5" placeholder="원인과 본인의 책임 내용을 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">조치 및 재발 방지 대책</label>
+                                <textarea class="form-control" name="factReportCountermeasures" rows="5" placeholder="조치 결과와 재발 방지 대책을 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">첨부파일</label>
+                                <input type="file" class="form-control" id="attachments" name="attachments" accept=".jpg,.jpeg,.pdf,.zip" multiple>
+                                <small class="form-hint">JPG, JPEG, PDF, ZIP 파일을 여러 개 첨부할 수 있습니다.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a th:href="@{/approval/write}" class="btn btn-outline-secondary">취소</a>
+                        <button type="button" class="btn btn-outline-primary">임시저장</button>
+                        <button type="submit" class="btn btn-primary">결재 요청</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+
+    <style>
+        .approval-form {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .required::after {
+            margin-left: 3px;
+            color: var(--tblr-danger);
+            content: "*";
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+
+    <div class="page-wrapper">
+
+        <!-- 네비게이션 -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Approval</div>
+                        <h2 class="page-title">기안서 작성</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+
+                <form th:action="@{/writeProposal}" method="post" enctype="multipart/form-data" class="card approval-form">
+
+                    <div class="card-header">
+                        <h3 class="card-title">기안서</h3>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+
+                            <!-- 기안 부서 -->
+                            <div class="col-md-3">
+                                <label class="form-label">기안 부서</label>
+                                <div class="form-control" th:text="${infoByEmployeeId.departmentType}"></div>
+                            </div>
+
+                            <!-- 기안 팀 -->
+                            <div class="col-md-3">
+                                <label class="form-label">기안 팀</label>
+                                <div class="form-control" th:text="${infoByEmployeeId.departmentName}"></div>
+                            </div>
+
+                            <!-- 기안자 -->
+                            <div class="col-md-3">
+                                <label class="form-label">기안자</label>
+                                <div class="form-control" th:text="${infoByEmployeeId.employeeName}"></div>
+                            </div>
+
+                            <!-- 제목 -->
+                            <div class="col-12">
+                                <label class="form-label required">제목</label>
+                                <input type="text" class="form-control" id="proposalTitle" name="proposalTitle" placeholder="기안 제목을 입력하세요" required>
+                            </div>
+
+                            <!-- 기안 목적 -->
+                            <div class="col-12">
+                                <label class="form-label required">기안 목적</label>
+                                <textarea class="form-control" id="proposalPurpose" name="proposalPurpose" rows="3" placeholder="기안 목적을 입력하세요" required></textarea>
+                            </div>
+
+                            <!-- 상세 내용 -->
+                            <div class="col-12">
+                                <label class="form-label required">상세 내용</label>
+                                <textarea class="form-control" id="proposalContent" name="proposalContent" rows="10" placeholder="상세 내용을 입력하세요" required></textarea>
+                            </div>
+
+                            <!-- 첨부파일 -->
+                            <div class="col-12">
+                                <label class="form-label">첨부파일</label>
+                                <input type="file" class="form-control" name="attachments" multiple>
+                                <small class="form-hint">* JPG, JPEG, PDF, ZIP 파일을 여러 개 첨부할 수 있습니다.</small>
+                                <small class="form-hint">* 용량은 파일당 최대 100MB, 총 파일은 300MB로 제한됩니다.</small>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 하단 버튼 -->
+                    <div class="card-footer text-end">
+                        <a th:href="@{/approval/forms}" class="btn btn-outline-secondary">취소</a>
+                        <button type="button" class="btn btn-outline-primary">임시저장</button>
+                        <button type="submit" class="btn btn-primary">결재 요청</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+
+</body>
+</html>

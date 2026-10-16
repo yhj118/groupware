@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        .approval-form { max-width: 980px; margin: 0 auto; }
+        .required::after { margin-left: 3px; color: var(--tblr-danger); content: "*"; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="page-pretitle">Approval</div>
+                <h2 class="page-title">업무 보고서 작성</h2>
+            </div>
+        </div>
+        <div class="page-body">
+            <div class="container-xl">
+                <form th:action="@{/writeWorkReport}" method="post" enctype="multipart/form-data" class="card approval-form">
+                    <div class="card-header"><h3 class="card-title">업무 보고서</h3></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label required">소속 부서</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentType}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">보고자</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentName}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">보고일</label>
+                                <input type="date" class="form-control" name="workReportDate" th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" readonly>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">보고서 제목</label>
+                                <input type="text" class="form-control" name="workReportTitle" placeholder="보고서 제목을 입력하세요">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">업무 시작일</label>
+                                <input type="date" class="form-control" id="workReportStart" name="workReportStart">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">업무 종료일</label>
+                                <input type="date" class="form-control" id="workReportEnd" name="workReportEnd">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">업무 개요</label>
+                                <textarea class="form-control" name="workReportOutline" rows="4" placeholder="업무 목적과 개요를 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">진행 내용</label>
+                                <textarea class="form-control" name="workReportContent" rows="7" placeholder="진행한 업무 내용을 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">결과 및 성과</label>
+                                <textarea class="form-control" name="workReportResult" rows="6" placeholder="업무 결과와 주요 성과를 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">향후 계획 및 특이사항</label>
+                                <textarea class="form-control" name="workReportEtc" rows="5" placeholder="후속 계획이나 특이사항을 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">첨부파일</label>
+                                <input type="file" class="form-control" id="attachments" name="attachments" accept=".jpg,.jpeg,.pdf,.zip" multiple>
+                                <small class="form-hint">JPG, JPEG, PDF, ZIP 파일을 여러 개 첨부할 수 있습니다.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a th:href="@{/approval/write}" class="btn btn-outline-secondary">취소</a>
+                        <button type="button" class="btn btn-outline-primary">임시저장</button>
+                        <button type="submit" class="btn btn-primary">결재 요청</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script>
+    // 날짜 종료일 < 날짜 시작일
+    const workReportStart = document.getElementById('workReportStart');
+    const workReportEnd = document.getElementById('workReportEnd');
+
+    workReportStart.addEventListener('change', function () {
+        workReportEnd.min = this.value;
+
+        if (workReportEnd.value && workReportEnd.value < this.value) {
+            workReportEnd.value = '';
+        }
+    });
+</script>
+
+</body>
+</html>

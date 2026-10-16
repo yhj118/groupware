@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper  namespace="io.github.yhj118.groupware.authentication.AuthMapper">
+
+    <!-- 로그인 -->
+    <select id="findEmployeeLogin" parameterType="java.lang.String" resultType="io.github.yhj118.groupware.employee.EmpResponse">
+        SELECT
+            employee_num AS employeeNum,
+            login_id AS loginId,
+            password
+        FROM
+            employee
+        WHERE
+            ( employee_num = #{loginKey} OR login_id = #{loginKey} )
+    </select>
+
+
+</mapper>

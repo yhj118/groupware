@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark" th:fragment="sidebar(activeMenu)">
+    <div class="container-fluid">
+
+        <!-- 로고 -->
+        <h1 class="navbar-brand navbar-brand-autodark">
+            <a th:href="@{/openMain}" class="text-decoration-none"><span class="text-white fs-2">SK hynix</span></a>
+        </h1>
+
+        <!-- 모바일 메뉴 버튼 -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="sidebar-menu">
+            <ul class="navbar-nav pt-lg-3">
+                <!-- 메인 -->
+                <li class="nav-item" th:classappend="${activeMenu == 'index'} ? 'active' : ''">
+                    <a class="nav-link" th:href="@{/openMain}">
+                         <span class="nav-link-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12l-2 0l9 -9l9 9l-2 0"/>
+                                <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/>
+                                <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>
+                            </svg>
+                         </span>
+                        <span class="nav-link-title">홈</span>
+                    </a>
+                </li>
+
+                <!-- 전자결재 -->
+                <li class="nav-item" th:classappend="${activeMenu == 'eApproval'} ? 'active' : ''">
+                    <a class="nav-link" th:href="@{/openEAMain}">
+                            <span class="nav-link-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="M12 5l7 7l-7 7"/>
+                                </svg>
+                            </span>
+                        <span class="nav-link-title">전자결재</span>
+                    </a>
+                </li>
+
+                <!-- 일정 -->
+                <li class="nav-item" th:classappend="${activeMenu == 'schedule'} ? 'active' : ''">
+                    <a class="nav-link" th:href="@{/openSchedule}">
+                            <span class="nav-link-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="4" y="5" width="16" height="16" rx="2"/>
+                                    <line x1="16" y1="3" x2="16" y2="7"/>
+                                    <line x1="8" y1="3" x2="8" y2="7"/>
+                                    <line x1="4" y1="11" x2="20" y2="11"/>
+                                </svg>
+                            </span>
+                        <span class="nav-link-title">일정</span>
+                    </a>
+                </li>
+
+                <!-- 게시판 -->
+                <li class="nav-item" th:classappend="${activeMenu == 'grBoard'} ? 'active' : ''">
+                    <a class="nav-link" th:href="@{/openGrBoardMain}">
+                            <span class="nav-link-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/>
+                                </svg>
+                            </span>
+                        <span class="nav-link-title">게시판</span>
+                    </a>
+                </li>
+
+                <!-- 조직도 -->
+                <li class="nav-item" th:classappend="${activeMenu == 'org'} ? 'active' : ''">
+                    <a class="nav-link" th:href="@{/openOrgMain}">
+                            <span class="nav-link-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/>
+                                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                                </svg>
+                            </span>
+                        <span class="nav-link-title">조직 현황</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mt-3"><div class="hr-text">관리</div></li>
+
+                <!-- 시스템 설정 -->
+                <li class="nav-item" th:classappend="${activeMenu == 'systemConfig'} ? 'active' : ''">
+                    <a class="nav-link" th:href="@{/openSystemConfig}">
+                            <span class="nav-link-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06"/>
+                                    <path d="M4.2 9a1.7 1.7 0 0 0 .34-1.88l-.06-.06"/>
+                                </svg>
+                            </span>
+                        <span class="nav-link-title">시스템 설정</span>
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</aside>
+
+</body>
+</html>

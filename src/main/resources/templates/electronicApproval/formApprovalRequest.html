@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+
+    <style>
+        .approval-form {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .required::after {
+            margin-left: 3px;
+            color: var(--tblr-danger);
+            content: "*";
+        }
+
+        .item-scroll-area {
+            max-height: 350px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid var(--tblr-border-color);
+            border-radius: var(--tblr-border-radius);
+        }
+
+        .item-table {
+            width: 100%;
+            margin-bottom: 0;
+            table-layout: fixed;
+        }
+
+        .item-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: var(--tblr-bg-surface);
+        }
+
+        .item-name-column {
+            width: auto;
+        }
+
+        .item-amount-column {
+            width: 230px;
+        }
+
+        .item-button-column {
+            width: 90px;
+            text-align: center;
+        }
+
+        .item-table td {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="page-pretitle">Approval</div>
+                <h2 class="page-title">품의서 작성</h2>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div class="container-xl">
+                <form th:action="@{/writeApprovalRequest}" method="post" enctype="multipart/form-data" class="card approval-form">
+                    <div class="card-header">
+                        <h3 class="card-title">품의서</h3>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">품의 부서</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentType}"></div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">품의 팀</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentName}"></div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">기안자</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.employeeName}"></div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label required">제목</label>
+                                <input type="text" class="form-control" id="approvalRequestTitle" name="approvalRequestTitle" placeholder="품의 제목을 입력하세요" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">집행 예정일</label>
+                                <input type="date" class="form-control" id="approvalRequestExecutionDate" name="approvalRequestExecutionDate">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label required">품의 사유</label>
+                                <textarea class="form-control" id="approvalRequestContent" name="approvalRequestContent" rows="4" placeholder="품의 사유를 입력하세요" required></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label class="form-label required mb-0">구매 물품</label>
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="addItem()">+ 물품 추가</button>
+                                </div>
+
+                                <div class="item-scroll-area">
+                                    <table class="table table-vcenter item-table">
+                                        <thead>
+                                        <tr>
+                                            <th class="item-name-column">물품명</th>
+                                            <th class="item-amount-column">금액</th>
+                                            <th class="item-button-column">관리</th>
+                                        </tr>
+                                        </thead>
+
+                                        <tbody id="itemTableBody">
+                                        <tr>
+                                            <td><input type="text" class="form-control" name="items[0].itemName" placeholder="구매할 물품 이름을 입력하세요" required></td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control item-amount" name="items[0].itemAmount" min="0" max="100000000" placeholder="0" oninput="calculateTotalAmount()" required>
+                                                    <span class="input-group-text">원</span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)">삭제</button></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <small class="form-hint mt-2">물품 추가 버튼을 눌러 구매 물품을 여러 개 입력할 수 있습니다.</small>
+                            </div>
+
+                            <div class="col-md-6 ms-auto">
+                                <label class="form-label required">총 품의 금액</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="approvalRequestTotalMoney" name="approvalRequestTotalMoney" value="0" readonly>
+                                    <span class="input-group-text">원</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">첨부파일</label>
+                                <input type="file" class="form-control" id="attachments" name="attachments" accept=".jpg,.jpeg,.pdf,.zip" multiple>
+                                <small class="form-hint">JPG, JPEG, PDF, ZIP 파일을 여러 개 첨부할 수 있습니다.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer text-end">
+                        <a th:href="@{/openFormSelect}" class="btn btn-outline-secondary">취소</a>
+                        <button type="button" class="btn btn-outline-primary">임시저장</button>
+                        <button type="submit" class="btn btn-primary">결재 요청</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+
+<script>
+    function addItem() {
+        const itemTableBody = document.getElementById("itemTableBody");
+        const itemIndex = itemTableBody.querySelectorAll("tr").length;
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td><input type="text" class="form-control" name="items[${itemIndex}].itemName" placeholder="구매할 물품 이름을 입력하세요" required></td>
+            <td>
+                <div class="input-group">
+                    <input type="number" class="form-control item-amount" name="items[${itemIndex}].itemAmount" min="0" max="100000000" placeholder="0" oninput="calculateTotalAmount()" required>
+                    <span class="input-group-text">원</span>
+                </div>
+            </td>
+            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)">삭제</button></td>
+        `;
+
+        itemTableBody.appendChild(row);
+    }
+
+    function removeItem(button) {
+        const itemTableBody = document.getElementById("itemTableBody");
+        const rows = itemTableBody.querySelectorAll("tr");
+
+        if (rows.length === 1) {
+            alert("구매 물품은 한 개 이상 입력해야 합니다.");
+            return;
+        }
+
+        button.closest("tr").remove();
+        updateItemIndexes();
+        calculateTotalAmount();
+    }
+
+    function updateItemIndexes() {
+        const rows = document.querySelectorAll("#itemTableBody tr");
+
+        rows.forEach((row, index) => {
+            const itemNameInput = row.querySelector('input[name$=".itemName"]');
+            const itemAmountInput = row.querySelector('input[name$=".itemAmount"]');
+
+            itemNameInput.name = `items[${index}].itemName`;
+            itemAmountInput.name = `items[${index}].itemAmount`;
+        });
+    }
+
+    function calculateTotalAmount() {
+        const amountInputs = document.querySelectorAll(".item-amount");
+        const totalInput = document.getElementById("approvalRequestTotalMoney");
+        let totalAmount = 0;
+
+        amountInputs.forEach(input => {
+            totalAmount += Number(input.value) || 0;
+        });
+
+        totalInput.value = totalAmount;
+    }
+</script>
+</body>
+</html>

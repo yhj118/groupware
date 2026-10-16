@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>전자결재</title>
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+
+    <style>
+        .approval-summary-card { min-height: 120px; }
+        .approval-summary-number { margin-top: 8px; font-size: 1.8rem; font-weight: 700; }
+        .approval-section { margin-top: 24px; }
+
+        /* 문서 종류 배지 */
+        .approval-type-badge { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; }
+        .approval-type-proposal { color: #74c0fc; background: rgba(34, 139, 230, 0.14); }
+        .approval-type-request { color: #ffa94d; background: rgba(245, 159, 0, 0.14); }
+        .approval-type-work-report { color: #69db7c; background: rgba(47, 179, 68, 0.14); }
+        .approval-type-business-trip { color: #b197fc; background: rgba(121, 80, 242, 0.14); }
+        .approval-type-fact-report { color: #ff8787; background: rgba(214, 57, 57, 0.14); }
+        .approval-type-vacation { color: #63e6be; background: rgba(12, 166, 120, 0.14); }
+
+        .approval-dialog { width: min(1500px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 48px); margin: auto; padding: 0; border: 1px solid var(--tblr-border-color, #303742); border-radius: 12px; background: var(--tblr-bg-surface, #fff); color: var(--tblr-body-color, #182433); box-shadow: 0 24px 80px #0005; }
+        .approval-dialog::backdrop { background: #0009; }
+        .approval-dialog[open] { display: flex; flex-direction: column; }
+
+        .approval-dialog.approval-opening { animation: approval-popup-open .10s ease-out; }
+        .approval-dialog.approval-closing { animation: approval-popup-close .05s ease-in forwards; }
+
+        .approval-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--tblr-border-color, #dadfe5); }
+        .approval-modal-header .card-title { margin: 0; }
+        .approval-modal-description { margin: 6px 0 0; font-size: 13px; }
+        .approval-close { flex-shrink: 0; }
+
+        .approval-filter { display: grid; grid-template-columns: 200px minmax(180px, 1fr) auto; align-items: end; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--tblr-border-color, #dadfe5); }
+        .approval-filter-actions { display: flex; gap: 8px; }
+        .approval-result-count { padding: 12px 24px; font-size: 13px; }
+
+        .approval-modal-scroll { min-height: 0; height: 750px; overflow: auto; }
+
+        .approval-modal-table { width: 100%; min-width: 1440px; margin-bottom: 0; border-collapse: separate; border-spacing: 0; }
+        .approval-modal-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #15191f !important;
+            background-color: #15191f !important;
+            background-clip: padding-box;
+            border-bottom: 1px solid #303742 !important;
+            box-shadow: inset 0 0 0 9999px #15191f, 0 2px 0 #303742 !important;
+        }
+        .approval-modal-table tbody td { position: relative; z-index: 0; }
+
+        .approval-modal-table th, .approval-modal-table td { padding: 14px 18px; vertical-align: middle; }
+
+        .approval-date { white-space: nowrap; font-size: 13px; font-variant-numeric: tabular-nums; }
+        .approval-title { min-width: 180px; max-width: 240px; overflow-wrap: anywhere; }
+        .approval-type, .approval-person { white-space: nowrap; }
+
+        /* 대기 문서: 처리일을 숨기고 제목에 남는 너비 배정 */
+        .approval-modal-table.is-pending-list { min-width: 1100px; table-layout: fixed; }
+        .approval-modal-table.is-pending-list .approval-type-heading { width: 150px; }
+        .approval-modal-table.is-pending-list .approval-person-heading { width: 100px; }
+        .approval-modal-table.is-pending-list .approval-date-heading { width: 200px; }
+        .approval-modal-table.is-pending-list .approval-title { min-width: 0; max-width: none; }
+        .approval-modal-table.is-pending-list .approval-title .approval-detail-link { display: block; line-height: 1.6; }
+
+        /* 승인·반려 문서: 날짜는 한 줄로, 제목은 남은 너비 사용 */
+        .approval-modal-table:not(.is-pending-list) { min-width: 1200px; table-layout: fixed; }
+        .approval-modal-table:not(.is-pending-list) .approval-type-heading { width: 150px; }
+        .approval-modal-table:not(.is-pending-list) .approval-person-heading { width: 100px; }
+        .approval-modal-table:not(.is-pending-list) .approval-date-heading { width: 190px; }
+        .approval-modal-table:not(.is-pending-list) .approval-date-heading,
+        .approval-modal-table:not(.is-pending-list) .approval-date { padding-left: 12px; padding-right: 12px; white-space: nowrap; }
+        .approval-modal-table:not(.is-pending-list) .approval-title { min-width: 0; max-width: none; }
+        .approval-modal-table:not(.is-pending-list) .approval-title .approval-detail-link { display: block; line-height: 1.6; }
+
+        .approval-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--tblr-border-color, #dadfe5); }
+
+        .approval-modal-table [hidden] { display: none !important; }
+        .approval-dialog > [hidden], .approval-list-panel[hidden], .approval-detail-panel[hidden] { display: none !important; }
+
+        .approval-list-panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+        .approval-detail-panel { display: flex; flex-direction: column; min-height: 0; height: 750px; overflow: hidden; }
+        .approval-detail-toolbar { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--tblr-border-color, #dadfe5); }
+        .approval-detail-scroll { flex: 1; min-height: 0; overflow: auto; background: var(--tblr-bg-surface-secondary, #f6f8fb); }
+
+        .approval-detail-message { max-width: 580px; margin: 70px auto; padding: 24px; text-align: center; }
+        .approval-detail-message p { margin: 12px 0 0; }
+
+        .approval-detail-loading-dot { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--tblr-border-color, #dadfe5); border-top-color: var(--tblr-primary, #206bc4); border-radius: 50%; animation: approval-loading .7s linear infinite; }
+        .approval-detail-link { font-weight: 600; }
+
+        @keyframes approval-popup-open {
+            from { opacity: 0; transform: scale(.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes approval-popup-close {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(.94); }
+        }
+
+        @keyframes approval-loading { to { transform: rotate(360deg); } }
+
+        @media (max-width: 700px) {
+            .approval-filter { grid-template-columns: 1fr; padding: 16px; }
+            .approval-filter-actions { justify-content: flex-end; }
+            .approval-modal-header, .approval-modal-footer { padding: 16px; }
+            .approval-dialog { max-height: calc(100dvh - 24px); }
+            .approval-detail-toolbar { padding: 12px 16px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .approval-detail-loading-dot { animation: none; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Approval</div>
+                        <h2 class="page-title">전자결재</h2>
+                        <div class="text-secondary mt-1">결재 문서를 작성하고 진행 상태를 확인할 수 있습니다.</div>
+                    </div>
+                    <div class="col-auto ms-auto"><a th:href="@{/openFormSelect}" class="btn btn-primary">+ 양식 작성</a></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div class="container-xl">
+
+                <div class="row row-cards">
+                    <div class="col-sm-6 col-lg-4" th:if="${loginEmployee.level == 'lv5'}">
+                        <div class="card approval-summary-card">
+                            <div class="card-body">
+                                <div class="text-secondary">결재 대기</div>
+                                <div class="approval-summary-number" th:text="${countStatus.countApprovalPending}">0</div>
+                                <div class="text-secondary small">내가 처리해야 할 문서</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-4" th:if="${loginEmployee.level != 'lv5'}">
+                        <div class="card approval-summary-card">
+                            <div class="card-body">
+                                <div class="text-secondary">진행 중</div>
+                                <div class="approval-summary-number" th:text="${countStatus.countEmployeePending}">0</div>
+                                <div class="text-secondary small">현재 결재 진행 중</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="card approval-summary-card">
+                            <div class="card-body">
+                                <div class="text-secondary">승인 완료</div>
+                                <div class="approval-summary-number" th:text="${loginEmployee.level == 'lv5' ? countStatus.countApprovalApprove : countStatus.countEmployeeApprove}">0</div>
+                                <div class="text-secondary small">최종 승인된 문서</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="card approval-summary-card">
+                            <div class="card-body">
+                                <div class="text-secondary">반려</div>
+                                <div class="approval-summary-number" th:text="${loginEmployee.level == 'lv5' ? countStatus.countApprovalReject : countStatus.countEmployeeReject}">0</div>
+                                <div class="text-secondary small">반려된 문서</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row approval-section g-4">
+
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h3 class="card-title">결재 대기 문서</h3>
+                                <div class="card-actions"><button type="button" class="btn btn-sm btn-outline-secondary approval-open-button" data-status="PENDING" data-title="결재 대기 문서" aria-haspopup="dialog" aria-controls="approvalListModal">전체보기</button></div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead><tr><th>문서 종류</th><th>기안자</th><th>기안일</th></tr></thead>
+                                    <tbody>
+                                    <tr th:each="pending : ${pendingList}">
+                                        <td>
+                                            <span class="approval-type-badge"
+                                                  th:classappend="${pending.eaType == 'PROPOSAL'} ? ' approval-type-proposal' :
+                                                                 (${pending.eaType == 'APPROVAL_REQUEST'} ? ' approval-type-request' :
+                                                                 (${pending.eaType == 'WORK_REPORT'} ? ' approval-type-work-report' :
+                                                                 (${pending.eaType == 'BUSINESS_TRIP'} ? ' approval-type-business-trip' :
+                                                                 (${pending.eaType == 'FACT_REPORT'} ? ' approval-type-fact-report' :
+                                                                 (${pending.eaType == 'VACATION'} ? ' approval-type-vacation' : '')))))"
+                                                  th:text="${pending.getEATypeName()}">
+                                            </span>
+                                        </td>
+                                        <td th:text="${pending.employeeName}"></td>
+                                        <td th:text="${pending.approvalWriteAt != null ? #temporals.format(pending.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(pendingList)}"><td colspan="3" class="text-center text-secondary py-4">문서가 없습니다.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h3 class="card-title">승인된 문서</h3>
+                                <div class="card-actions"><button type="button" class="btn btn-sm btn-outline-secondary approval-open-button" data-status="APPROVE" data-title="승인된 문서" aria-haspopup="dialog" aria-controls="approvalListModal">전체보기</button></div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead><tr><th>문서 종류</th><th>기안자</th><th>기안일</th></tr></thead>
+                                    <tbody>
+                                    <tr th:each="approve : ${approveList}">
+                                        <td>
+                                            <span class="approval-type-badge"
+                                                  th:classappend="${approve.eaType == 'PROPOSAL'} ? ' approval-type-proposal' :
+                                                                 (${approve.eaType == 'APPROVAL_REQUEST'} ? ' approval-type-request' :
+                                                                 (${approve.eaType == 'WORK_REPORT'} ? ' approval-type-work-report' :
+                                                                 (${approve.eaType == 'BUSINESS_TRIP'} ? ' approval-type-business-trip' :
+                                                                 (${approve.eaType == 'FACT_REPORT'} ? ' approval-type-fact-report' :
+                                                                 (${approve.eaType == 'VACATION'} ? ' approval-type-vacation' : '')))))"
+                                                  th:text="${approve.getEATypeName()}">
+                                            </span>
+                                        </td>
+                                        <td th:text="${approve.employeeName}"></td>
+                                        <td th:text="${approve.approvalWriteAt != null ? #temporals.format(approve.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(approveList)}"><td colspan="3" class="text-center text-secondary py-4">문서가 없습니다.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h3 class="card-title">반려된 문서</h3>
+                                <div class="card-actions"><button type="button" class="btn btn-sm btn-outline-secondary approval-open-button" data-status="REJECT" data-title="반려된 문서" aria-haspopup="dialog" aria-controls="approvalListModal">전체보기</button></div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead><tr><th>문서 종류</th><th>기안자</th><th>기안일</th></tr></thead>
+                                    <tbody>
+                                    <tr th:each="reject : ${rejectList}">
+                                        <td>
+                                            <span class="approval-type-badge"
+                                                  th:classappend="${reject.eaType == 'PROPOSAL'} ? ' approval-type-proposal' :
+                                                                 (${reject.eaType == 'APPROVAL_REQUEST'} ? ' approval-type-request' :
+                                                                 (${reject.eaType == 'WORK_REPORT'} ? ' approval-type-work-report' :
+                                                                 (${reject.eaType == 'BUSINESS_TRIP'} ? ' approval-type-business-trip' :
+                                                                 (${reject.eaType == 'FACT_REPORT'} ? ' approval-type-fact-report' :
+                                                                 (${reject.eaType == 'VACATION'} ? ' approval-type-vacation' : '')))))"
+                                                  th:text="${reject.getEATypeName()}">
+                                            </span>
+                                        </td>
+                                        <td th:text="${reject.employeeName}"></td>
+                                        <td th:text="${reject.approvalWriteAt != null ? #temporals.format(reject.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(rejectList)}"><td colspan="3" class="text-center text-secondary py-4">문서가 없습니다.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 결재 목록 / 상세 팝업 -->
+<dialog id="approvalListModal" class="approval-dialog" aria-labelledby="approvalModalTitle" aria-describedby="approvalModalDescription">
+
+    <div class="approval-modal-header">
+        <div>
+            <h2 class="card-title" id="approvalModalTitle">결재 문서 전체보기</h2>
+            <p class="text-secondary approval-modal-description" id="approvalModalDescription">문서 종류와 검색어로 목록을 확인하세요.</p>
+        </div>
+        <button type="button" class="btn btn-icon approval-close" data-close-approval aria-label="팝업 닫기">×</button>
+    </div>
+
+
+    <!-- 목록 -->
+    <div id="approvalListPanel" class="approval-list-panel">
+
+        <form id="approvalSearchForm" class="approval-filter">
+            <div>
+                <label for="approvalTypeFilter" class="form-label">문서 종류</label>
+                <select id="approvalTypeFilter" class="form-select">
+                    <option value="">전체</option>
+                    <option value="PROPOSAL">기안서</option>
+                    <option value="APPROVAL_REQUEST">품의서</option>
+                    <option value="WORK_REPORT">업무 보고서</option>
+                    <option value="BUSINESS_TRIP">출장 신청서</option>
+                    <option value="FACT_REPORT">경위/시말서</option>
+                    <option value="VACATION">휴가 신청서</option>
+                </select>
+            </div>
+            <div>
+                <label for="approvalKeywordFilter" class="form-label">검색어</label>
+                <input id="approvalKeywordFilter" class="form-control" type="search" placeholder="기안자, 제목, 결재자 검색">
+            </div>
+            <div class="approval-filter-actions">
+                <button type="reset" class="btn btn-outline-secondary">초기화</button>
+                <button type="submit" class="btn btn-primary">검색</button>
+            </div>
+        </form>
+
+        <div class="approval-result-count text-secondary" role="status">총 <strong id="approvalModalCount">0</strong>건</div>
+
+        <div class="approval-modal-scroll" tabindex="0" role="region" aria-label="전체 결재 문서 표">
+            <table class="table table-vcenter approval-modal-table">
+                <thead>
+                    <tr>
+                        <th scope="col" class="approval-type-heading">문서 종류</th>
+                        <th scope="col" class="approval-person-heading">기안자</th>
+                        <th scope="col">제목</th>
+                        <th scope="col" class="approval-date-heading">작성일</th>
+                        <th scope="col" class="approval-date-heading">수정일</th>
+                        <th scope="col" class="approval-date-heading" data-approval-processed-column>처리일</th>
+                        <th scope="col" class="approval-person-heading">결재자</th>
+                    </tr>
+                </thead>
+                <tbody id="approvalModalBody">
+                    <tr class="approval-document-row" th:each="dataAll : ${dataAllList}" th:attr="data-status=${dataAll.approvalStatus}, data-type=${dataAll.eaType}">
+                        <td class="approval-type">
+                            <span class="approval-type-badge"
+                                  th:classappend="${dataAll.eaType == 'PROPOSAL'} ? ' approval-type-proposal' :
+                                                 (${dataAll.eaType == 'APPROVAL_REQUEST'} ? ' approval-type-request' :
+                                                 (${dataAll.eaType == 'WORK_REPORT'} ? ' approval-type-work-report' :
+                                                 (${dataAll.eaType == 'BUSINESS_TRIP'} ? ' approval-type-business-trip' :
+                                                 (${dataAll.eaType == 'FACT_REPORT'} ? ' approval-type-fact-report' :
+                                                 (${dataAll.eaType == 'VACATION'} ? ' approval-type-vacation' : '')))))"
+                                  th:text="${dataAll.getEATypeName()}">
+                            </span>
+                        </td>
+                        <td class="approval-person approval-searchable" th:text="${dataAll.employeeName}"></td>
+                        <td class="approval-title approval-searchable"><a class="approval-detail-link" th:href="@{/viewApprovalDetail(approvalId=${dataAll.approvalId}, keyType=${dataAll.eaType})}" th:text="${dataAll.getEATitle()}"></a></td>
+                        <td class="approval-date" th:text="${dataAll.approvalWriteAt != null ? #temporals.format(dataAll.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+                        <td class="approval-date" th:text="${dataAll.approvalUpdateAt != null ? #temporals.format(dataAll.approvalUpdateAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+                        <td class="approval-date" data-approval-processed-column th:text="${dataAll.approvalProcessedAt != null ? #temporals.format(dataAll.approvalProcessedAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+                        <td class="approval-person approval-searchable" th:text="${dataAll.approverName != null ? dataAll.approverName : '—'}"></td>
+                    </tr>
+
+                    <tr id="approvalModalEmpty">
+                        <td colspan="7" class="text-center text-secondary py-5">표시할 문서가 없습니다.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- 상세 -->
+    <div id="approvalDetailPanel" class="approval-detail-panel" hidden>
+        <div class="approval-detail-toolbar">
+            <button type="button" id="approvalBackToList" class="btn btn-outline-secondary">← 목록으로</button>
+            <span class="text-secondary small">문서 상세보기</span>
+        </div>
+        <div id="approvalDetailContent" class="approval-detail-scroll" tabindex="-1" role="region" aria-label="문서 상세 내용" aria-live="polite"></div>
+    </div>
+    <div class="approval-modal-footer">
+        <span class="text-secondary small">목록이 넓으면 팝업 내부에서 가로로 스크롤할 수 있습니다.</span>
+    </div>
+
+</dialog>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script th:src="@{/js/approval-edit.js}" defer></script>
+
+<script>
+    const approvalModal = document.getElementById("approvalListModal");
+    const approvalForm = document.getElementById("approvalSearchForm");
+    const approvalTypeSelect = document.getElementById("approvalTypeFilter");
+    const approvalKeyword = document.getElementById("approvalKeywordFilter");
+    const approvalRows = Array.from(document.querySelectorAll(".approval-document-row"));
+    const approvalListPanel = document.getElementById("approvalListPanel");
+    const approvalDetailPanel = document.getElementById("approvalDetailPanel");
+    const approvalDetailContent = document.getElementById("approvalDetailContent");
+    const approvalListScroll = approvalListPanel.querySelector(".approval-modal-scroll");
+    const approvalModalTitle = document.getElementById("approvalModalTitle");
+    const approvalModalDescription = document.getElementById("approvalModalDescription");
+
+    let selectedApprovalStatus = "";
+    let approvalTriggerButton = null;
+    let detailTriggerLink = null;
+    let listTitle = "결재 문서 전체보기";
+    let savedListScrollTop = 0;
+    let savedListScrollLeft = 0;
+    let detailRequest = null;
+    let detailRequestNumber = 0;
+
+
+    // 상태에 맞게 처리일 열과 대기 문서 너비 조정
+    function updateApprovalListColumns() {
+        const isPending = selectedApprovalStatus === "PENDING";
+        const table = approvalListPanel.querySelector(".approval-modal-table");
+
+        table.classList.toggle("is-pending-list", isPending);
+        table.querySelectorAll("[data-approval-processed-column]").forEach(column => {
+            column.hidden = isPending;
+        });
+        document.querySelector("#approvalModalEmpty td").colSpan = isPending ? 6 : 7;
+    }
+
+
+    // 목록 필터
+    function filterApprovalDocuments() {
+        updateApprovalListColumns();
+        const type = approvalTypeSelect.value;
+        const keyword = approvalKeyword.value.trim().toLowerCase();
+        let count = 0;
+
+        approvalRows.forEach(row => {
+            const searchable = Array.from(row.querySelectorAll(".approval-searchable")).map(cell => cell.textContent).join(" ").toLowerCase();
+            const matches = row.dataset.status === selectedApprovalStatus && (!type || row.dataset.type === type) && (!keyword || searchable.includes(keyword));
+
+            row.hidden = !matches;
+            if (matches) count++;
+        });
+
+        document.getElementById("approvalModalCount").textContent = count;
+        document.getElementById("approvalModalEmpty").hidden = count > 0;
+    }
+
+
+    // 상세 조회 중단
+    function cancelDetailRequest() {
+        detailRequestNumber++;
+        if (detailRequest) detailRequest.abort();
+        detailRequest = null;
+        approvalDetailContent.removeAttribute("aria-busy");
+    }
+
+
+    // 목록 화면
+    function showApprovalList(restoreFocus = true) {
+        cancelDetailRequest();
+        approvalDetailPanel.hidden = true;
+        approvalListPanel.hidden = false;
+        approvalModalTitle.textContent = listTitle;
+        approvalModalDescription.textContent = "문서 종류와 검색어로 목록을 확인하세요.";
+        approvalListScroll.scrollTop = savedListScrollTop;
+        approvalListScroll.scrollLeft = savedListScrollLeft;
+
+        if (restoreFocus && detailTriggerLink) detailTriggerLink.focus({ preventScroll: true });
+    }
+
+
+    // 상세 로딩 메시지
+    function showDetailMessage(message, loading = false) {
+        const box = document.createElement("div");
+        box.className = "approval-detail-message";
+        box.setAttribute("role", loading ? "status" : "alert");
+
+        if (loading) {
+            const dot = document.createElement("span");
+            dot.className = "approval-detail-loading-dot";
+            dot.setAttribute("aria-hidden", "true");
+            box.appendChild(dot);
+        }
+
+        const text = document.createElement("p");
+        text.textContent = message;
+        box.appendChild(text);
+
+        approvalDetailContent.replaceChildren(box);
+    }
+
+
+    // 상세 화면
+    async function openApprovalDetail(link) {
+        if (!approvalModal.open) return;
+
+        savedListScrollTop = approvalListScroll.scrollTop;
+        savedListScrollLeft = approvalListScroll.scrollLeft;
+        detailTriggerLink = link;
+
+        cancelDetailRequest();
+
+        const requestNumber = detailRequestNumber;
+        const controller = new AbortController();
+        detailRequest = controller;
+
+        approvalListPanel.hidden = true;
+        approvalDetailPanel.hidden = false;
+
+        approvalModalTitle.textContent = "문서 상세보기";
+        approvalModalDescription.textContent = "작성 내용과 첨부파일, 결재 상태를 확인하세요.";
+
+        approvalDetailContent.scrollTop = 0;
+        approvalDetailContent.setAttribute("aria-busy", "true");
+
+        showDetailMessage("문서를 불러오고 있습니다.", true);
+        document.getElementById("approvalBackToList").focus();
+
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        try {
+            const response = await fetch(link.href, {
+                credentials: "same-origin",
+                headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "text/html" },
+                signal: controller.signal
+            });
+
+            if (response.redirected) throw new Error("로그인이 만료되었거나 상세보기 응답이 변경되었습니다. 페이지를 새로고침해 주세요.");
+
+            if (!response.ok) {
+                if (response.status === 403) throw new Error("이 문서를 조회할 권한이 없습니다.");
+                if (response.status === 404) throw new Error("문서를 찾을 수 없습니다.");
+                if (response.status === 400) throw new Error("이 양식의 상세 화면을 아직 열 수 없습니다.");
+
+                throw new Error("문서를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+            }
+
+            const markup = await response.text();
+
+            if (requestNumber !== detailRequestNumber || !approvalModal.open) return;
+
+            const holder = document.createElement("div");
+            holder.innerHTML = markup;
+
+            const detail = holder.querySelector("[data-approval-detail]");
+
+            if (!detail) throw new Error("상세 화면을 불러오지 못했습니다. 페이지를 새로고침해 주세요.");
+
+            approvalDetailContent.replaceChildren(detail);
+
+            const formName = detail.querySelector(".proposal-form-name");
+            approvalModalTitle.textContent = formName ? formName.textContent.trim() + " 상세보기" : "문서 상세보기";
+
+        } catch (error) {
+            if (requestNumber !== detailRequestNumber || !approvalModal.open) return;
+
+            showDetailMessage(
+                error.name === "AbortError"
+                    ? "응답 시간이 길어졌습니다. 목록으로 돌아간 후 다시 시도해 주세요."
+                    : error.message
+            );
+
+        } finally {
+            clearTimeout(timeout);
+
+            if (requestNumber === detailRequestNumber) {
+                approvalDetailContent.removeAttribute("aria-busy");
+                detailRequest = null;
+            }
+        }
+    }
+
+
+    // 팝업 열기
+    function openApprovalModal() {
+        if (approvalModal.open) return;
+
+        approvalModal.classList.remove("approval-closing", "approval-opening");
+        approvalModal.showModal();
+
+        void approvalModal.offsetWidth;
+
+        approvalModal.classList.add("approval-opening");
+    }
+
+
+    // 팝업 닫기 효과
+    function closeApprovalModal() {
+        if (!approvalModal.open || approvalModal.classList.contains("approval-closing")) return;
+
+        approvalModal.classList.remove("approval-opening");
+        approvalModal.classList.add("approval-closing");
+    }
+
+
+    // 전체보기 버튼
+    document.querySelectorAll(".approval-open-button").forEach(button => {
+        button.addEventListener("click", () => {
+            selectedApprovalStatus = button.dataset.status;
+            approvalTriggerButton = button;
+            detailTriggerLink = null;
+            listTitle = button.dataset.title + " 전체보기";
+            savedListScrollTop = 0;
+            savedListScrollLeft = 0;
+
+            showApprovalList(false);
+            approvalForm.reset();
+            filterApprovalDocuments();
+
+            openApprovalModal();
+        });
+    });
+
+
+    // 애니메이션 종료
+    approvalModal.addEventListener("animationend", event => {
+        if (event.animationName === "approval-popup-open") {
+            approvalModal.classList.remove("approval-opening");
+        }
+
+        if (event.animationName === "approval-popup-close") {
+            approvalModal.classList.remove("approval-closing");
+
+            if (approvalModal.open) approvalModal.close();
+        }
+    });
+
+
+    // 문서 상세 클릭
+    document.getElementById("approvalModalBody").addEventListener("click", event => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button > 0) return;
+
+        const row = event.target.closest(".approval-document-row");
+        const link = event.target.closest(".approval-detail-link") || (row && row.querySelector(".approval-detail-link"));
+
+        if (!link || row?.hidden) return;
+
+        event.preventDefault();
+        openApprovalDetail(link);
+    });
+
+
+    // 목록으로
+    document.getElementById("approvalBackToList").addEventListener("click", () => showApprovalList());
+
+
+    // 검색
+    approvalForm.addEventListener("submit", event => {
+        event.preventDefault();
+        filterApprovalDocuments();
+    });
+
+    approvalTypeSelect.addEventListener("change", filterApprovalDocuments);
+    approvalForm.addEventListener("reset", () => setTimeout(filterApprovalDocuments, 0));
+
+
+    // X 버튼
+    document.querySelectorAll("[data-close-approval]").forEach(button => {
+        button.addEventListener("click", closeApprovalModal);
+    });
+
+
+    // ESC
+    approvalModal.addEventListener("cancel", event => {
+        event.preventDefault();
+        closeApprovalModal();
+    });
+
+
+    // 실제 close 완료
+    approvalModal.addEventListener("close", () => {
+        cancelDetailRequest();
+
+        approvalModal.classList.remove("approval-opening", "approval-closing");
+
+        if (approvalTriggerButton) approvalTriggerButton.focus();
+    });
+
+
+    // 팝업 바깥 클릭
+    approvalModal.addEventListener("click", event => {
+        const rect = approvalModal.getBoundingClientRect();
+
+        const outside =
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom;
+
+        if (event.target === approvalModal && outside) closeApprovalModal();
+    });
+
+
+    // 마우스 뒤로가기 버튼
+    function preventMouseBack(event) {
+        if (!approvalModal?.open || event.button !== 3) return;
+
+        event.preventDefault();
+
+        if (approvalDetailPanel && !approvalDetailPanel.hidden) {
+            document.getElementById("approvalBackToList").click();
+        }
+    }
+
+    document.addEventListener("mousedown", preventMouseBack, true);
+    document.addEventListener("mouseup", preventMouseBack, true);
+    document.addEventListener("auxclick", preventMouseBack, true);
+</script>
+
+</body>
+</html>

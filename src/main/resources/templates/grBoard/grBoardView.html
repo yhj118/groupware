@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+    <link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+
+    <style>
+        .board-content {
+            min-height: 350px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.8;
+        }
+
+        .board-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 공통 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('grBoard')}"></div>
+
+    <!-- 게시글 수정 알림 -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;" th:if="${updateMessage != null}">
+        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+            <!-- 알림 제목 -->
+            <div class="toast-header">
+                <span class="avatar avatar-xs bg-green-lt text-green me-2">✓</span>
+                <strong class="me-auto">처리 완료</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="닫기"></button>
+            </div>
+            <!-- 알림 내용 -->
+            <div class="toast-body" th:text="${updateMessage}"> 글이 수정되었습니다.</div>
+        </div>
+    </div>
+
+    <!-- 메인 영역 -->
+    <div class="page-wrapper">
+
+        <!-- 공통 Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Community</div>
+                        <h2 class="page-title">게시글 보기</h2>
+                        <div class="text-secondary mt-1">게시글의 내용을 확인합니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 페이지 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+
+                <div class="card">
+
+                    <!-- 게시글 제목 영역 -->
+                    <div class="card-header">
+                        <div class="w-100">
+
+                            <!-- 게시글 분류 -->
+                            <div class="mb-2">
+                                <span class="badge bg-blue-lt" th:if="${grBoardViewData.category == 'NOTICE'}">공지사항</span>
+                                <span class="badge bg-green-lt" th:if="${grBoardViewData.category == 'FREE'}">자유게시판</span>
+                                <span class="badge bg-yellow-lt" th:if="${grBoardViewData.category == 'WORK'}">업무공유</span>
+                                <span class="badge bg-secondary-lt" th:if="${grBoardViewData.category == 'ETC'}">기타</span>
+
+                                <!-- 비밀글 아이콘 -->
+                                <svg th:if="${grBoardViewData.secretYn == true}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-1 text-secondary">
+                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            </div>
+
+                            <!-- 게시글 제목 -->
+                            <h2 class="card-title mb-3" th:text="${grBoardViewData.title}"></h2>
+
+                            <!-- 게시글 정보 -->
+                            <div class="board-meta text-secondary">
+                                <div>
+                                    작성자:<span class="text-body fw-medium" th:text="${grBoardViewData.employeeName}"></span>
+                                </div>
+                                <div>
+                                    부서:<span class="text-body fw-medium" th:text="${grBoardViewData.departmentName}"></span>
+                                </div>
+                                <div>
+                                    작성일:<span class="text-body fw-medium" th:text="${#temporals.format(grBoardViewData.createdDate, 'yyyy/MM/dd HH:mm:ss')}"></span>
+                                </div>
+                                <div>
+                                    마지막 수정일:<span class="text-body fw-medium" th:text="${#temporals.format(grBoardViewData.modifyDate, 'yyyy/MM/dd HH:mm:ss')}"></span>
+                                </div>
+                                <div>
+                                    조회수:<span class="text-body fw-medium" th:text="${grBoardViewData.viewCnt}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 게시글 내용 -->
+                    <div class="card-body">
+                        <div class="board-content" th:text="${grBoardViewData.content}"></div>
+                    </div>
+
+                    <!-- 버튼 영역 -->
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+
+                            <!-- 뒤로 버튼 -->
+                            <button type="button" onclick="history.back()" class="btn btn-outline-secondary">뒤로</button>
+
+                            <!-- 수정 및 삭제 버튼 -->
+                            <div class="d-flex gap-2" th:if="${grBoardViewData.employeeId == loginEmployeeId}">
+                                <a th:href="@{/openGrBoardModify(grBoardId=${grBoardViewData.grBoardId})}" class="btn btn-outline-primary">수정</a>
+                                <form th:action="@{/goGrBoardDelete(grBoardId=${grBoardViewData.grBoardId})}" method="post" onsubmit="return confirm('게시글을 삭제하시겠습니까?');">
+                                    <input type="hidden" name="grBoardId" th:value="${grBoardViewData.grBoardId}">
+                                    <button type="submit" class="btn btn-outline-danger">삭제</button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>

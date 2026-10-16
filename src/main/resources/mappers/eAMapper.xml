@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.yhj118.groupware.electronicApproval.EAMapper">
+
+    <!-- ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ 페이지 오픈 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ -->
+    <!-- 작성자의 사번, 이름, 부서, 팀 조회 -->
+    <select id="openFormProposal" parameterType="int" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        SELECT e.employee_id,
+            e.employee_name,
+            e.level,
+            pt.*
+        FROM employee AS e
+        JOIN (
+            SELECT team.department_id,
+                parent.department_type,
+                team.department_name
+            FROM department team
+                JOIN department parent
+                ON team.parent_department_id = parent.department_id
+            ) AS pt
+            ON e.department_id = pt.department_id
+            WHERE e.employee_id  = #{employeeId};
+    </select>
+
+    <!-- ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ 공통 작업 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ -->
+
+    <!-- 작성자의 결재자ID 조회 -->
+    <select id="findLevel5" parameterType="int" resultType="int">
+        SELECT a.employee_id
+        FROM employee a
+        JOIN (SELECT department_id FROM employee WHERE employee_id = #{employeeId}) AS w
+        ON a.department_id = w.department_id
+        WHERE a.`level` = 'lv5'
+    </select>
+
+    <!-- 전자결재 insert --> <!-- keyColumn: DB에서 자동생성되는 애를 key로 설정, useGeneratedKeys: keyColumn을 가져온나, keyProperty: 얘를 java 필드에 초기화해 -->
+    <insert id="insertApproval" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest"
+            keyColumn="approval_id" useGeneratedKeys="true" keyProperty="approvalId">
+        INSERT INTO electronic_approval (
+            writer_employee_id,
+            approver_employee_id,
+            ea_type
+        ) VALUES (
+            #{employeeId},
+            #{approverEmployeeId},
+            #{eaType}
+        )
+    </insert>
+
+    <!-- 전자결재 update -->
+    <update id="updateApproval">
+        UPDATE
+            electronic_approval
+        SET
+            approval_update_at = NOW()
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 첨부파일 insert -->
+    <insert id="insertAttachments">
+        INSERT INTO approval_attachment (
+            approval_id,
+            original_file_name,
+            stored_file_name,
+            file_path,
+            file_type,
+            file_size
+        ) VALUES
+        <foreach collection="attachments" item="file" separator=",">
+            (
+                #{file.approvalId},
+                #{file.originalFileName},
+                #{file.storedFileName},
+                #{file.filePath},
+                #{file.fileType},
+                #{file.fileSize}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 수정할 기안서 조회 및 잠금: 수정 저장이 끝날 때까지 상태 변경과 충돌 방지 -->
+    <select id="findProposalForUpdate" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        SELECT ea.approval_id,
+               ea.writer_employee_id,
+               ea.ea_type,
+               ea.approval_status
+        FROM electronic_approval ea
+            INNER JOIN ea_proposal ep ON ep.approval_id = ea.approval_id
+        WHERE ea.approval_id = #{approvalId}
+        FOR UPDATE
+    </select>
+
+    <!-- 실제 삭제할 첨부파일 정보를 먼저 파일 경로 확보 -->
+    <select id="findAttachmentsToDelete" resultType="io.github.yhj118.groupware.electronicApproval.EAResponseAttachment">
+        SELECT *
+        FROM approval_attachment
+        WHERE approval_id = #{approvalId}
+        <choose>
+            <when test="deleteAttachmentIds != null and !deleteAttachmentIds.isEmpty()">
+                AND attachment_id IN
+                <foreach collection="deleteAttachmentIds" item="attachmentId" open="(" separator="," close=")">
+                    #{attachmentId}
+                </foreach>
+            </when>
+            <otherwise>AND 1 = 0</otherwise>
+        </choose>
+    </select>
+
+    <!-- 삭제할 번호가 없으면 아무 행도 삭제하지 않음 -->
+    <delete id="deleteAttachments">
+        DELETE FROM approval_attachment
+        WHERE approval_id = #{approvalId}
+        <choose>
+            <when test="deleteAttachmentIds != null and !deleteAttachmentIds.isEmpty()">
+                AND attachment_id IN
+                <foreach collection="deleteAttachmentIds" item="attachmentId" open="(" separator="," close=")">
+                    #{attachmentId}
+                </foreach>
+            </when>
+            <otherwise>AND 1 = 0</otherwise>
+        </choose>
+    </delete>
+
+    <!-- ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ 양식 기능 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ -->
+
+    <!-- 기안서 작성 -->
+    <insert id="writeProposal" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest">
+        INSERT INTO ea_proposal (
+            approval_id,
+            proposal_title,
+            proposal_content,
+            proposal_purpose
+        ) VALUES (
+            #{approvalId},
+            #{proposalTitle},
+            #{proposalContent},
+            #{proposalPurpose}
+        )
+    </insert>
+
+    <!-- 품의서 작성 -->
+    <insert id="writeRequest" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest"
+                              useGeneratedKeys="true" keyColumn="approval_request_id" keyProperty="approvalRequestId">
+        INSERT INTO ea_approval_request
+        (
+            approval_id,
+            approval_request_title,
+            approval_request_content,
+            approval_request_execution_date,
+            approval_request_total_money
+        ) VALUES (
+            #{approvalId},
+            #{approvalRequestTitle},
+            #{approvalRequestContent},
+            #{approvalRequestExecutionDate},
+            #{approvalRequestTotalMoney}
+        )
+    </insert>
+
+    <!-- 품의서 항목 및 비용 -->
+    <insert id="insertApprovalRequestItems">
+        INSERT INTO ea_approval_request_item (
+            approval_request_id,
+            item_name,
+            item_amount
+        ) VALUES
+        <foreach collection="items" item="item" separator=",">
+            (
+            #{approvalRequestId},
+            #{item.itemName},
+            #{item.itemAmount}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 휴가 계획서 작성 -->
+    <insert id="writeVacation" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest">
+        INSERT INTO ea_vacation
+        (
+            approval_id,
+            vacation_type,
+            vacation_content,
+            vacation_start,
+            vacation_end,
+            vacation_subscription
+        ) VALUES (
+            #{approvalId},
+            #{vacationType},
+            #{vacationContent},
+            #{vacationStart},
+            #{vacationEnd},
+            #{vacationSubscription}
+        )
+    </insert>
+
+    <!-- 출장 계획서 작성 -->
+    <insert id="writeBusinessTrip" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest">
+        INSERT INTO ea_business_trip (
+            approval_id,
+            business_trip_executionDate,
+            business_trip_location,
+            business_trip_friend,
+            business_trip_start,
+            business_trip_end,
+            business_trip_purpose,
+            business_trip_content,
+            business_trip_amount,
+            business_trip_transportation,
+            business_trip_title
+        ) VALUES (
+            #{approvalId},
+            #{businessTripExecutionDate},
+            #{businessTripLocation},
+            #{businessTripFriend},
+            #{businessTripStart},
+            #{businessTripEnd},
+            #{businessTripPurpose},
+            #{businessTripContent},
+            #{businessTripAmount},
+            #{businessTripTransportation},
+            #{businessTripTitle}
+        )
+    </insert>
+
+    <!-- 경위/시말서 작성 -->
+    <insert id="writeFactReport" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest">
+        INSERT INTO ea_fact_report (
+            approval_id,
+            fact_report_writeDate,
+            fact_report_title,
+            fact_report_occurrence,
+            fact_report_location,
+            fact_report_inspector,
+            fact_report_cause,
+            fact_report_countermeasures
+        ) VALUES (
+            #{approvalId},
+            #{factReportWriteDate},
+            #{factReportTitle},
+            #{factReportOccurrence},
+            #{factReportLocation},
+            #{factReportInspector},
+            #{factReportCause},
+            #{factReportCountermeasures}
+        )
+    </insert>
+
+    <!-- 업무 보고서 작성 -->
+    <insert id="writeWorkReport" parameterType="io.github.yhj118.groupware.electronicApproval.EARequest">
+        INSERT INTO ea_work_report (
+            approval_id,
+            work_report_date,
+            work_report_title,
+            work_report_start,
+            work_report_content,
+            work_report_end,
+            work_report_outline,
+            work_report_result,
+            work_report_etc
+        ) VALUES (
+            #{approvalId},
+            #{workReportDate},
+            #{workReportTitle},
+            #{workReportStart},
+            #{workReportContent},
+            #{workReportEnd},
+            #{workReportOutline},
+            #{workReportResult},
+            #{workReportEtc}
+        )
+    </insert>
+
+    <!-- 전자결재 현황 카운트 -->
+    <select id="countApprovalStatus" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        SELECT
+            COUNT(CASE WHEN approval_status = 'PENDING' AND writer_employee_id = #{employeeId} THEN 1 END) AS count_employee_pending,
+            COUNT(CASE WHEN approval_status = 'APPROVE' AND writer_employee_id = #{employeeId} THEN 1 END) AS count_employee_approve,
+            COUNT(CASE WHEN approval_status = 'REJECT' AND writer_employee_id = #{employeeId} THEN 1 END) AS count_employee_reject,
+            COUNT(CASE WHEN approval_status = 'PENDING' AND approver_employee_id = #{employeeId} THEN 1 END) AS count_approval_pending,
+            COUNT(CASE WHEN approval_status = 'APPROVE' AND approver_employee_id = #{employeeId} THEN 1 END) AS count_approval_approve,
+            COUNT(CASE WHEN approval_status = 'REJECT' AND approver_employee_id = #{employeeId} THEN 1 END) AS count_approval_reject
+        FROM electronic_approval
+            WHERE writer_employee_id = #{employeeId}
+            OR approver_employee_id = #{employeeId}
+    </select>
+
+    <!-- 메인 전체 리스트 -->
+    <select id="countMainList" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        SELECT
+            ea.*,
+            e.employee_name,
+            approver.employee_name AS approver_name,
+            COALESCE(
+                proposal.proposal_title,
+                request.approval_request_title,
+                work.work_report_title,
+                fact.fact_report_title,
+                business.business_trip_title
+            ) AS title
+        FROM electronic_approval ea
+        JOIN employee e
+            ON e.employee_id = ea.writer_employee_id
+        LEFT JOIN employee AS approver
+            ON approver.employee_id = ea.approver_employee_id
+        LEFT JOIN ea_proposal AS proposal
+            ON proposal.approval_id = ea.approval_id
+        LEFT JOIN ea_approval_request AS request
+            ON request.approval_id = ea.approval_id
+        LEFT JOIN ea_work_report AS work
+            ON work.approval_id = ea.approval_id
+        LEFT JOIN ea_fact_report AS fact
+            ON fact.approval_id = ea.approval_id
+        LEFT JOIN ea_business_trip AS business
+            ON business.approval_id = ea.approval_id
+        WHERE (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+            AND ea.approval_status IN ('PENDING', 'APPROVE', 'REJECT')
+            ORDER BY ea.approval_write_at DESC, ea.approval_id DESC
+    </select>
+
+    <!-- 전자결재 상세보기 -->
+    <select id="viewApprovalDetail" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        <if test = "keyType != null and keyType != ''">
+            <choose>
+                <when test="keyType == 'PROPOSAL'">
+                    SELECT
+                        ea.*,
+                        ep.*,
+                        writer.employee_name AS employee_name,
+                        approver.employee_name AS approver_name
+                    FROM electronic_approval AS ea
+                        LEFT JOIN ea_proposal AS ep ON ea.approval_id = ep.approval_id
+                        LEFT JOIN employee AS writer ON writer.employee_id = ea.writer_employee_id
+                        LEFT JOIN employee AS approver ON approver.employee_id = ea.approver_employee_id
+                    WHERE ea.ea_type = 'PROPOSAL'
+                        AND (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+                        AND ea.approval_id = #{approvalId}
+                </when>
+                <when test="keyType == 'APPROVAL_REQUEST'">
+                    SELECT
+                        ea.*,
+                        ear.*,
+                        e.employee_name,
+                        ae.employee_name AS approver_name
+                    FROM electronic_approval AS ea
+                        LEFT JOIN ea_approval_request AS ear ON ea.approval_id = ear.approval_id
+                        LEFT JOIN employee AS e ON ea.writer_employee_id = e.employee_id
+                        LEFT JOIN employee AS ae ON ea.approver_employee_id = ae.employee_id
+                    WHERE (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+                        AND ea.approval_id = #{approvalId}
+                </when>
+                <when test="keyType == 'VACATION'">
+                    SELECT
+                        ea.*,
+                        ev.*,
+                        e.employee_name,
+                        ae.employee_name AS approver_name
+                    FROM ea_vacation AS ev
+                        LEFT JOIN electronic_approval AS ea ON ev.approval_id = ea.approval_id
+                        LEFT JOIN employee AS e ON ea.writer_employee_id = e.employee_id
+                        LEFT JOIN employee AS ae ON ea.approver_employee_id = ae.employee_id
+                    WHERE ev.approval_id = #{approvalId}
+                        AND (writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+                </when>
+                <when test="keyType == 'BUSINESS_TRIP'">
+                    SELECT
+                        ea.*,
+                        ebt.*,
+                        e.employee_name,
+                        e2.employee_name AS approver_name
+                    FROM electronic_approval AS ea
+                        LEFT JOIN ea_business_trip AS ebt ON ea.approval_id = ebt.approval_id
+                        LEFT JOIN employee AS e ON ea.writer_employee_id = e.employee_id
+                        LEFT JOIN employee AS e2 ON ea.approver_employee_id = e2.employee_id
+                    WHERE ea.approval_id = #{approvalId}
+                        AND (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+                </when>
+                <when test="keyType == 'FACT_REPORT'">
+                    SELECT
+                        ea.*,
+                        efr.*,
+                        e.employee_name,
+                        e2.employee_name AS approver_name
+                    FROM electronic_approval AS ea
+                        LEFT JOIN ea_fact_report AS efr ON ea.approval_id = efr.approval_id
+                        LEFT JOIN employee AS e ON ea.writer_employee_id = e.employee_id
+                        LEFT JOIN employee AS e2 ON ea.approver_employee_id = e2.employee_id
+                    WHERE ea.approval_id = #{approvalId}
+                    AND (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+                </when>
+                <when test="keyType == 'WORK_REPORT'">
+                    SELECT
+                        ea.*,
+                        ewr.*,
+                        e.employee_name,
+                        e2.employee_name AS approver_name
+                    FROM electronic_approval AS ea
+                        LEFT JOIN ea_work_report AS ewr ON ea.approval_id = ewr.approval_id
+                        LEFT JOIN employee AS e ON ea.writer_employee_id = e.employee_id
+                        LEFT JOIN employee AS e2 ON ea.approver_employee_id = e2.employee_id
+                    WHERE ea.approval_id = #{approvalId}
+                    AND (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <!-- 기안서 수정 -->
+    <update id="updateProposal">
+        UPDATE
+            ea_proposal
+        SET
+            proposal_title = #{params.proposalTitle},
+            proposal_content = #{params.proposalContent},
+            proposal_purpose = #{params.proposalPurpose}
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 품의서 수정 -->
+    <update id="updateApprovalRequest">
+        UPDATE ea_approval_request
+        SET approval_request_title = #{params.approvalRequestTitle},
+            approval_request_content = #{params.approvalRequestContent},
+            approval_request_execution_date = #{params.approvalRequestExecutionDate},
+            approval_request_total_money = #{params.approvalRequestTotalMoney}
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 휴가 신청서 수정 -->
+    <update id="updateVacation">
+        UPDATE ea_vacation
+        SET vacation_type = #{params.vacationType},
+            vacation_content = #{params.vacationContent},
+            vacation_start = #{params.vacationStart},
+            vacation_end = #{params.vacationEnd}
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 출장 신청서 수정 -->
+    <update id="updateBusinessTrip">
+        UPDATE ea_business_trip
+        SET business_trip_title = #{params.businessTripTitle},
+            business_trip_location = #{params.businessTripLocation},
+            business_trip_friend = #{params.businessTripFriend},
+            business_trip_start = #{params.businessTripStart},
+            business_trip_end = #{params.businessTripEnd},
+            business_trip_purpose = #{params.businessTripPurpose},
+            business_trip_content = #{params.businessTripContent},
+            business_trip_amount = #{params.businessTripAmount},
+            business_trip_transportation = #{params.businessTripTransportation}
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 경위/사실 보고서 수정 -->
+    <update id="updateFactReport">
+        UPDATE ea_fact_report
+        SET fact_report_title = #{params.factReportTitle},
+            fact_report_occurrence = #{params.factReportOccurrence},
+            fact_report_location = #{params.factReportLocation},
+            fact_report_inspector = #{params.factReportInspector},
+            fact_report_cause = #{params.factReportCause},
+            fact_report_countermeasures = #{params.factReportCountermeasures}
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 업무 보고서 작성 -->
+    <update id="updateWorkReport">
+        UPDATE ea_work_report
+        SET work_report_date = #{params.workReportDate},
+            work_report_title = #{params.workReportTitle},
+            work_report_start = #{params.workReportStart},
+            work_report_end = #{params.workReportEnd},
+            work_report_outline = #{params.workReportOutline},
+            work_report_content = #{params.workReportContent},
+            work_report_result = #{params.workReportResult},
+            work_report_etc = #{params.workReportEtc}
+        WHERE approval_id = #{approvalId}
+    </update>
+
+    <!-- 클릭한 파일 1개 조회 + 다운로드 권한 확인 -->
+    <select id="findDownloadAttachment" resultType="io.github.yhj118.groupware.electronicApproval.EAResponseAttachment">
+        SELECT aa.*
+            FROM approval_attachment aa
+            JOIN electronic_approval ea ON aa.approval_id = ea.approval_id
+        WHERE aa.attachment_id = #{attachmentId}
+            AND (ea.writer_employee_id = #{employeeId} OR ea.approver_employee_id = #{employeeId})
+    </select>
+
+    <!-- 문서에 첨부된 파일 목록 조회 -->
+    <select id="viewAttachmentList" resultType="io.github.yhj118.groupware.electronicApproval.EAResponseAttachment">
+        SELECT *
+            FROM approval_attachment
+        WHERE approval_id = #{approvalId}
+            ORDER BY attachment_id ASC
+    </select>
+
+    <!-- 품의물품 조회 -->
+    <select id="viewRequestItem" resultType="io.github.yhj118.groupware.electronicApproval.EARequestItem">
+        SELECT
+            eari.*,
+            ear.approval_request_total_money
+        FROM ea_approval_request_item AS eari
+            LEFT JOIN ea_approval_request AS ear ON eari.approval_request_id = ear.approval_request_id
+        WHERE eari.approval_request_id = #{approvalRequestId}
+    </select>
+
+
+    <!-- 수정/삭제 공통 잠금: 실제 양식 종류는 이 결과를 사용 -->
+    <select id="findApprovalForUpdate" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        SELECT approval_id, writer_employee_id, ea_type, approval_status
+        FROM electronic_approval
+        WHERE approval_id = #{approvalId}
+        FOR UPDATE
+    </select>
+
+    <!-- 테이블 이름을 사용자 입력으로 치환하지 않고 정해진 6개 중 선택 -->
+    <select id="findApprovalFormId" resultType="java.lang.Integer">
+        <choose>
+            <when test="eaType == 'PROPOSAL'">SELECT proposal_id FROM ea_proposal</when>
+            <when test="eaType == 'APPROVAL_REQUEST'">SELECT approval_request_id FROM ea_approval_request</when>
+            <when test="eaType == 'VACATION'">SELECT vacation_id FROM ea_vacation</when>
+            <when test="eaType == 'BUSINESS_TRIP'">SELECT business_trip_id FROM ea_business_trip</when>
+            <when test="eaType == 'FACT_REPORT'">SELECT fact_report_id FROM ea_fact_report</when>
+            <when test="eaType == 'WORK_REPORT'">SELECT work_report_id FROM ea_work_report</when>
+            <otherwise>SELECT NULL FROM electronic_approval</otherwise>
+        </choose>
+        WHERE approval_id = #{approvalId}
+    </select>
+
+    <delete id="deleteApprovalRequestItems">
+        DELETE FROM ea_approval_request_item
+        WHERE approval_request_id = #{approvalRequestId}
+    </delete>
+
+    <delete id="deleteAllAttachments">
+        DELETE FROM approval_attachment
+        WHERE approval_id = #{approvalId}
+    </delete>
+
+    <delete id="deleteApprovalForm">
+        <choose>
+            <when test="eaType == 'PROPOSAL'">
+                DELETE FROM ea_proposal WHERE approval_id = #{approvalId}
+            </when>
+            <when test="eaType == 'APPROVAL_REQUEST'">
+                DELETE FROM ea_approval_request WHERE approval_id = #{approvalId}
+            </when>
+            <when test="eaType == 'VACATION'">
+                DELETE FROM ea_vacation WHERE approval_id = #{approvalId}
+            </when>
+            <when test="eaType == 'BUSINESS_TRIP'">
+                DELETE FROM ea_business_trip WHERE approval_id = #{approvalId}
+            </when>
+            <when test="eaType == 'FACT_REPORT'">
+                DELETE FROM ea_fact_report WHERE approval_id = #{approvalId}
+            </when>
+            <when test="eaType == 'WORK_REPORT'">
+                DELETE FROM ea_work_report WHERE approval_id = #{approvalId}
+            </when>
+            <otherwise>DELETE FROM electronic_approval WHERE 1 = 0</otherwise>
+        </choose>
+    </delete>
+
+    <delete id="deleteApproval">
+        DELETE FROM electronic_approval
+        WHERE approval_id = #{approvalId}
+            AND writer_employee_id = #{employeeId}
+            AND approval_status = 'PENDING'
+    </delete>
+
+    <!-- 결재자의 승인, 반려 처리 -->
+    <update id="updateApprovalStatus">
+        UPDATE
+            electronic_approval
+        SET
+            approval_processed_at = NOW(),
+            approval_status = #{approvalStatus},
+            approval_comment = #{approvalComment}
+        WHERE approval_id = #{approvalId}
+            AND approver_employee_id = #{employeeId}
+    </update>
+
+    <!-- 일정에 넣을 데이터 조회 -->
+    <select id="selectScheduleData" resultType="io.github.yhj118.groupware.electronicApproval.EAResponse">
+        SELECT
+            ea.approval_id,
+            ea.writer_employee_id,
+            ea.approval_status,
+            ea.ea_type,
+            ev.vacation_start,
+            ev.vacation_end,
+            ebt.business_trip_start,
+            ebt.business_trip_end
+        FROM electronic_approval AS ea
+            LEFT JOIN ea_vacation AS ev ON ea.approval_id = ev.approval_id
+            LEFT JOIN ea_business_trip AS ebt ON ea.approval_id = ebt.approval_id
+        WHERE ea.approval_id = #{approvalId}
+        AND ea.approval_status = 'APPROVE'
+        AND (ea.ea_type = 'BUSINESS_TRIP' OR ea.ea_type = 'VACATION')
+    </select>
+
+</mapper>

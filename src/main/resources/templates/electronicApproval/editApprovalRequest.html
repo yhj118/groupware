@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>품의서 수정</title>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <script th:src="@{/js/approval-edit.js}" defer></script>
+</head>
+<body style="margin:0">
+<section class="approval-edit-root" th:fragment="edit" data-approval-edit data-approval-detail data-page-title="품의서 수정" th:attr="data-approval-id=${viewApprovalData.approvalId}" th:with="canEdit=${loginEmployee != null and viewApprovalData.writerEmployeeId == loginEmployee.employeeId and viewApprovalData.approvalStatus == 'PENDING'}">
+    <style>
+        .approval-edit-root { --edit-border: var(--tblr-border-color, #e2e8f0); --edit-surface: var(--tblr-bg-surface, #fff); --edit-muted: var(--tblr-secondary, #667382); max-width: 1060px; margin: 0 auto; padding: 28px; color: var(--tblr-body-color, #182433); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .approval-edit-root * { box-sizing: border-box; }
+        .approval-edit-root .edit-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .approval-edit-root .edit-eyebrow { color: var(--edit-muted); font-size: 12px; letter-spacing: .08em; font-weight: 600; }
+        .approval-edit-root .edit-document-number { margin-top: 5px; color: var(--edit-muted); font-size: 13px; }
+        .approval-edit-root .edit-status { padding: 8px 13px; border-radius: 999px; background: #fff4d7; color: #916200; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .approval-edit-root .edit-status.is-approved { background: #e9f7ee; color: #23834b; }
+        .approval-edit-root .edit-status.is-rejected { background: #fdeceb; color: #c43c39; }
+        .approval-edit-root .edit-paper { margin: 0; background: var(--edit-surface); border: 1px solid var(--edit-border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px #18243304; }
+        .approval-edit-root .edit-header { padding: 28px 30px; border-bottom: 1px solid var(--edit-border); }
+        .approval-edit-root .proposal-form-name { margin-bottom: 9px; color: #4263b3; font-size: 13px; font-weight: 600; }
+        .approval-edit-root .edit-title { margin: 0; font-size: 25px; font-weight: 700; line-height: 1.45; }
+        .approval-edit-root .edit-description { margin: 8px 0 0; color: var(--edit-muted); font-size: 13px; }
+        .approval-edit-root .edit-metadata { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 22px 30px; gap: 22px; border-bottom: 1px solid var(--edit-border); }
+        .approval-edit-root .edit-label { display: block; margin-bottom: 8px; color: var(--edit-muted); font-size: 12px; font-weight: 500; }
+        .approval-edit-root .edit-value { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+        .approval-edit-root .edit-dates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 18px 30px; gap: 18px; background: var(--tblr-bg-surface-secondary, #f8fafc); border-bottom: 1px solid var(--edit-border); }
+        .approval-edit-root .edit-date { font-size: 13px; font-variant-numeric: tabular-nums; }
+        .approval-edit-root .edit-fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+        .approval-edit-root .edit-section { padding: 26px 30px; border-bottom: 1px solid var(--edit-border); }
+        .approval-edit-root .edit-section-title { margin: 0 0 16px; font-size: 15px; font-weight: 700; }
+        .approval-edit-root .edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        .approval-edit-root .edit-full { grid-column: 1 / -1; }
+        .approval-edit-root .form-label { display: block; margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+        .approval-edit-root .required::after { content: '*'; margin-left: 4px; color: var(--tblr-danger, #d63939); }
+        .approval-edit-root .form-control, .approval-edit-root .form-select { display: block; width: 100%; min-height: 40px; padding: 9px 12px; border: 1px solid var(--edit-border); border-radius: 6px; background-color: var(--edit-surface); color: inherit; font: inherit; font-size: 14px; }
+        .approval-edit-root textarea.form-control { resize: vertical; line-height: 1.7; }
+        .approval-edit-root .form-control:focus, .approval-edit-root .form-select:focus { outline: 2px solid #4263b3; outline-offset: 1px; }
+        .approval-edit-root input[readonly] { background: var(--tblr-bg-surface-secondary, #f8fafc); }
+        .approval-edit-root .edit-help { margin: 8px 0 0; color: var(--edit-muted); font-size: 12px; line-height: 1.6; }
+        .approval-edit-root .edit-money-input { display: flex; align-items: center; gap: 10px; }
+        .approval-edit-root .edit-money-unit { flex-shrink: 0; color: var(--edit-muted); font-size: 13px; }
+        .approval-edit-root .edit-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .approval-edit-root .edit-section-heading .edit-section-title { margin: 0; }
+        .approval-edit-root .edit-item-scroll { max-height: 350px; overflow: auto; border: 1px solid var(--edit-border); border-radius: 8px; }
+        .approval-edit-root .edit-items { width: 100%; min-width: 550px; border-collapse: collapse; margin: 0; font-size: 13px; }
+        .approval-edit-root .edit-items th, .approval-edit-root .edit-items td { padding: 12px; border-bottom: 1px solid var(--edit-border); vertical-align: middle; }
+        .approval-edit-root .edit-items tr:last-child td { border-bottom: 0; }
+        .approval-edit-root .edit-items th { position: sticky; top: 0; z-index: 1; background: var(--tblr-bg-surface-secondary, #f8fafc); text-align: left; color: var(--edit-muted); }
+        .approval-edit-root .edit-total { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 18px 20px; border-radius: 8px; background: var(--tblr-bg-surface-secondary, #f8fafc); }
+        .approval-edit-root .edit-total strong { color: #4263b3; font-size: 23px; font-variant-numeric: tabular-nums; }
+        .approval-edit-root .edit-file-count { margin-left: 4px; color: var(--edit-muted); font-weight: 400; }
+        .approval-edit-root .edit-files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .approval-edit-root .edit-file-card { min-width: 0; border: 1px solid var(--edit-border); border-radius: 8px; background: var(--edit-surface); }
+        .approval-edit-root .edit-file-link { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px; color: inherit; text-decoration: none; }
+        .approval-edit-root .edit-file-link:hover { background: var(--tblr-bg-surface-secondary, #f8fafc); color: inherit; text-decoration: none; }
+        .approval-edit-root .edit-file-link:focus-visible { outline: 2px solid #4263b3; outline-offset: -2px; }
+        .approval-edit-root .edit-file-icon { display: grid; place-items: center; width: 40px; height: 44px; flex-shrink: 0; border-radius: 7px; background: #edf3ff; color: #4263b3; }
+        .approval-edit-root .edit-file-info { flex: 1; min-width: 0; }
+        .approval-edit-root .edit-file-name { display: block; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+        .approval-edit-root .edit-file-size { display: block; margin-top: 4px; color: var(--edit-muted); font-size: 12px; }
+        .approval-edit-root .edit-file-download { flex-shrink: 0; width: 18px; height: 18px; color: #4263b3; }
+        .approval-edit-root .edit-file-delete { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px; border-top: 1px solid var(--edit-border); font-size: 12px; cursor: pointer; }
+        .approval-edit-root .edit-file-card.is-marked { border-color: var(--tblr-danger, #d63939); background: var(--tblr-danger-lt, #fff1f1); }
+        .approval-edit-root .edit-file-card.is-marked .edit-file-name { text-decoration: line-through; }
+        .approval-edit-root .edit-upload { margin-top: 20px; }
+        .approval-edit-root .edit-new-files { display: grid; gap: 8px; margin-top: 12px; }
+        .approval-edit-root .edit-new-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--edit-border); border-radius: 6px; font-size: 13px; }
+        .approval-edit-root .edit-new-file span { min-width: 0; overflow-wrap: anywhere; }
+        .approval-edit-root .edit-empty { margin: 0; color: var(--edit-muted); font-size: 13px; }
+        .approval-edit-root .edit-comment { margin: 0; padding: 14px 18px; border-left: 3px solid #a5b8df; border-radius: 0 6px 6px 0; background: var(--tblr-bg-surface-secondary, #f8fafc); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; font-size: 14px; }
+        .approval-edit-root .edit-warning { margin: 0; padding: 14px 30px; border-bottom: 1px solid var(--edit-border); color: var(--tblr-danger, #d63939); font-size: 13px; }
+        .approval-edit-root .edit-error { margin: 16px 30px 0; padding: 12px 14px; border: 1px solid var(--tblr-danger, #d63939); border-radius: 6px; color: var(--tblr-danger, #d63939); font-size: 13px; }
+        .approval-edit-root .edit-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 20px 30px; }
+        .approval-edit-root .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border: 1px solid var(--edit-border); border-radius: 6px; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
+        .approval-edit-root .btn-primary { color: #fff; background: var(--tblr-primary, #4263b3); border-color: var(--tblr-primary, #4263b3); }
+        .approval-edit-root .btn-outline-secondary { color: var(--edit-muted); background: transparent; }
+        .approval-edit-root .btn-outline-danger { color: var(--tblr-danger, #d63939); background: transparent; border-color: var(--tblr-danger, #d63939); }
+        .approval-edit-root .btn-sm { padding: 6px 10px; font-size: 12px; }
+        .approval-edit-root button:disabled { opacity: .5; cursor: not-allowed; }
+        .approval-edit-root [hidden] { display: none !important; }
+        @media (max-width: 760px) { .approval-edit-root { padding: 16px; } .approval-edit-root .edit-header, .approval-edit-root .edit-section, .approval-edit-root .edit-actions { padding: 22px 20px; } .approval-edit-root .edit-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 20px; } .approval-edit-root .edit-dates { grid-template-columns: 1fr; padding: 18px 20px; gap: 14px; } .approval-edit-root .edit-grid, .approval-edit-root .edit-files { grid-template-columns: 1fr; } .approval-edit-root .edit-title { font-size: 21px; } }
+    </style>
+    <div class="edit-heading">
+        <div>
+            <div class="edit-eyebrow">ELECTRONIC APPROVAL</div>
+            <div class="edit-document-number" th:text="${'문서 번호 · ' + viewApprovalData.approvalId}"></div>
+        </div>
+        <span class="edit-status" th:classappend="${viewApprovalData.approvalStatus == 'APPROVE' ? 'is-approved' : (viewApprovalData.approvalStatus == 'REJECT' ? 'is-rejected' : '')}" th:text="${viewApprovalData.approvalStatus == 'PENDING' ? '결재 대기' : (viewApprovalData.approvalStatus == 'APPROVE' ? '승인 완료' : (viewApprovalData.approvalStatus == 'REJECT' ? '반려' : viewApprovalData.approvalStatus))}"></span>
+    </div>
+    <form class="edit-paper" th:action="@{/updateApproval}" method="post" enctype="multipart/form-data" data-approval-edit-form>
+        <input type="hidden" name="approvalId" th:value="${viewApprovalData.approvalId}">
+        <input type="hidden" name="eaType" th:value="${viewApprovalData.eaType}">
+        <header class="edit-header">
+            <div class="proposal-form-name">품의서 수정</div>
+            <h2 class="edit-title">품의서 수정</h2>
+            <p class="edit-description">변경할 내용을 입력한 후 수정 저장을 눌러주세요.</p>
+        </header>
+        <div class="edit-metadata">
+            <div>
+                <span class="edit-label">소속 부서</span>
+                <div class="edit-value" th:text="${infoByEmployeeId != null and infoByEmployeeId.departmentType != null ? infoByEmployeeId.departmentType : '—'}"></div>
+            </div>
+            <div>
+                <span class="edit-label">소속 팀</span>
+                <div class="edit-value" th:text="${infoByEmployeeId != null and infoByEmployeeId.departmentName != null ? infoByEmployeeId.departmentName : '—'}"></div>
+            </div>
+            <div>
+                <span class="edit-label">기안자</span>
+                <div class="edit-value" th:text="${viewApprovalData.employeeName != null ? viewApprovalData.employeeName : '—'}"></div>
+            </div>
+            <div>
+                <span class="edit-label">결재자</span>
+                <div class="edit-value" th:text="${viewApprovalData.approverName != null ? viewApprovalData.approverName : '—'}"></div>
+            </div>
+        </div>
+        <div class="edit-dates">
+            <div>
+                <span class="edit-label">작성일시</span>
+                <div class="edit-date" th:text="${viewApprovalData.approvalWriteAt != null ? #temporals.format(viewApprovalData.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div>
+            </div>
+            <div>
+                <span class="edit-label">수정일시</span>
+                <div class="edit-date" th:text="${viewApprovalData.approvalUpdateAt != null ? #temporals.format(viewApprovalData.approvalUpdateAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div>
+            </div>
+            <div>
+                <span class="edit-label">처리일시</span>
+                <div class="edit-date" th:text="${viewApprovalData.approvalProcessedAt != null ? #temporals.format(viewApprovalData.approvalProcessedAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div>
+            </div>
+        </div>
+        <p class="edit-warning" th:if="${!canEdit}">본인이 작성한 결재 대기 문서만 수정할 수 있습니다.</p>
+        <fieldset class="edit-fieldset" th:disabled="${!canEdit}">
+            <section class="edit-section">
+                <h3 class="edit-section-title">품의 내용</h3>
+                <div class="edit-grid">
+                    <div class="edit-full">
+                        <label for="approvalRequestTitle" class="form-label required">제목</label>
+                        <input type="text" class="form-control" id="approvalRequestTitle" name="approvalRequestTitle" th:value="${viewApprovalData.approvalRequestTitle}" maxlength="200" required>
+                    </div>
+                    <div>
+                        <label for="approvalRequestExecutionDate" class="form-label">집행 예정일</label>
+                        <input type="date" class="form-control" id="approvalRequestExecutionDate" name="approvalRequestExecutionDate" th:value="${viewApprovalData.approvalRequestExecutionDate}">
+                    </div>
+                    <div class="edit-full">
+                        <label for="approvalRequestContent" class="form-label required">품의 사유</label>
+                        <textarea class="form-control" id="approvalRequestContent" name="approvalRequestContent" rows="5" th:text="${viewApprovalData.approvalRequestContent}" required></textarea>
+                    </div>
+                </div>
+            </section>
+            <section class="edit-section">
+                <div class="edit-section-heading">
+                    <h3 class="edit-section-title">구매 물품</h3>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-add-item>+ 물품 추가</button>
+                </div>
+                <div class="edit-item-scroll">
+                    <table class="edit-items">
+                        <thead>
+                            <tr>
+                                <th style="width: 65px;">번호</th>
+                                <th>물품 이름</th>
+                                <th style="width: 200px;">금액</th>
+                                <th style="width: 80px;">삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody data-item-body>
+                            <tr th:each="item, itemStatus : ${viewRequestItemList}">
+                                <td data-item-number th:text="${itemStatus.count}"></td>
+                                <td><input type="text" class="form-control" data-item-name th:name="|items[${itemStatus.index}].itemName|" th:value="${item.itemName}" aria-label="물품 이름" required></td>
+                                <td>
+                                    <div class="edit-money-input">
+                                        <input type="number" class="form-control" data-item-amount th:name="|items[${itemStatus.index}].itemAmount|" th:value="${item.itemAmount}" min="0" max="100000000" step="1" aria-label="물품 금액" required>
+                                        <span class="edit-money-unit">원</span>
+                                    </div>
+                                </td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>삭제</button></td>
+                            </tr>
+                            <tr th:if="${viewRequestItemList == null or #lists.isEmpty(viewRequestItemList)}">
+                                <td data-item-number>1</td>
+                                <td><input type="text" class="form-control" data-item-name name="items[0].itemName" aria-label="물품 이름" required></td>
+                                <td>
+                                    <div class="edit-money-input">
+                                        <input type="number" class="form-control" data-item-amount name="items[0].itemAmount" min="0" max="100000000" step="1" aria-label="물품 금액" required>
+                                        <span class="edit-money-unit">원</span>
+                                    </div>
+                                </td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>삭제</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="edit-total">
+                    <span>총 품의 금액</span>
+                    <strong data-item-total th:text="${#numbers.formatInteger(viewApprovalData.approvalRequestTotalMoney, 1, 'COMMA') + ' 원'}"></strong>
+                </div>
+                <input type="hidden" name="approvalRequestTotalMoney" data-item-total-input th:value="${viewApprovalData.approvalRequestTotalMoney}">
+                <p class="edit-help">최소 한 개의 물품을 입력하세요. 총액은 물품 금액에 따라 자동으로 계산됩니다.</p>
+            </section>
+            <!-- 기존 첨부파일과 새 첨부파일 -->
+            <section class="edit-section">
+                <h3 class="edit-section-title">첨부파일 <span class="edit-file-count" th:text="${viewAttachmentList != null ? '(' + #lists.size(viewAttachmentList) + ')' : '(0)'}"></span></h3>
+                <div class="edit-files" th:if="${viewAttachmentList != null and !#lists.isEmpty(viewAttachmentList)}">
+                    <div class="edit-file-card" th:each="file : ${viewAttachmentList}">
+                        <a class="edit-file-link" th:href="@{/downloadAttachment(attachmentId=${file.attachmentId})}" th:download="${file.originalFileName}" th:aria-label="${file.originalFileName + ' 다운로드'}">
+                            <span class="edit-file-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+                            </span>
+                            <span class="edit-file-info">
+                                <span class="edit-file-name" th:text="${file.originalFileName}"></span>
+                                <span class="edit-file-size" th:text="${file.fileSize >= 1048576 ? #numbers.formatDecimal(file.fileSize / 1048576.0, 1, 1) + ' MB' : #numbers.formatDecimal(file.fileSize / 1024.0, 1, 1) + ' KB'}"></span>
+                            </span>
+                            <svg class="edit-file-download" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 17v4h14v-4"/></svg>
+                        </a>
+                        <label class="edit-file-delete">
+                            <input type="checkbox" name="deleteAttachmentIds" th:value="${file.attachmentId}" data-delete-attachment>
+                            <span>수정 저장 시 삭제</span>
+                        </label>
+                    </div>
+                </div>
+                <p class="edit-empty" th:if="${viewAttachmentList == null or #lists.isEmpty(viewAttachmentList)}">등록된 첨부파일이 없습니다.</p>
+                <div class="edit-upload">
+                    <label for="attachments" class="form-label">새 첨부파일 추가</label>
+                    <input type="file" class="form-control" id="attachments" name="attachments" accept=".jpg,.jpeg,.pdf,.zip" multiple data-new-attachments>
+                    <p class="edit-help">JPG, JPEG, PDF, ZIP 파일을 여러 개 선택할 수 있습니다. 삭제를 선택하지 않은 기존 파일은 유지됩니다.</p>
+                    <div class="edit-new-files" data-new-file-list aria-live="polite"></div>
+                </div>
+            </section>
+        </fieldset>
+        <section class="edit-section">
+            <h3 class="edit-section-title">결재자 코멘트</h3>
+            <p class="edit-comment" th:text="${viewApprovalData.approvalComment != null and !#strings.isEmpty(viewApprovalData.approvalComment) ? viewApprovalData.approvalComment : '등록된 코멘트가 없습니다.'}"></p>
+        </section>
+        <p class="edit-error" data-edit-error role="alert" hidden></p>
+        <div class="edit-actions">
+            <a class="btn btn-outline-secondary" data-edit-cancel th:href="@{/viewApprovalDetail(approvalId=${viewApprovalData.approvalId},keyType=${viewApprovalData.eaType})}">취소</a>
+            <button type="submit" class="btn btn-primary" th:disabled="${!canEdit}">수정 저장</button>
+        </div>
+    </form>
+</section>
+</body>
+</html>

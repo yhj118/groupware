@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="io.github.yhj118.groupware.Team.TeamMapper">
+
+    <!-- 부서-팀 조회 -->
+    <select id="empFindTeam" resultType="io.github.yhj118.groupware.Team.TeamResponse">
+        SELECT
+            team.department_id,
+            team.department_name,
+            parent.department_type
+        FROM department team
+            JOIN department parent
+            ON parent.department_id = team.parent_department_id
+        WHERE team.department_status = 'ACTIVE'
+            ORDER BY parent.department_name ASC, team.department_name ASC;
+    </select>
+
+</mapper>

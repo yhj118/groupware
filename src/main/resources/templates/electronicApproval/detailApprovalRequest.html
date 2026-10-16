@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>품의서 상세보기</title>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <script th:src="@{/js/approval-edit.js}" defer></script>
+</head>
+<body>
+<section class="request-detail" th:fragment="detail" data-approval-detail th:attr="data-approval-id=${viewApprovalData.approvalId}" th:with="canProcessApproval=${loginEmployee != null and viewApprovalData.approverEmployeeId == loginEmployee.employeeId and viewApprovalData.approvalStatus == 'PENDING'}">
+    <style>
+        .request-detail { padding: 24px; color: var(--tblr-body-color, #182433); }
+        .request-detail .request-paper { max-width: 1060px; margin: 0 auto; overflow: hidden; border: 1px solid var(--tblr-border-color, #dadfe5); border-radius: 12px; background: var(--tblr-bg-surface, #fff); }
+        .request-detail .request-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 24px; border-bottom: 1px solid var(--tblr-border-color, #dadfe5); }
+        .request-detail .request-heading { margin: 4px 0 0; font-size: 24px; font-weight: 700; }
+
+        .request-detail .request-status { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 999px; background: #fff4d7; color: #916200; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .request-detail .request-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .request-detail .request-status.is-approved { background: #e9f7ee; color: #23834b; }
+        .request-detail .request-status.is-rejected { background: #fdeceb; color: #c43c39; }
+        .request-detail .request-status.is-other { background: var(--tblr-bg-surface-secondary, #f6f8fb); color: var(--tblr-secondary, #667382); }
+
+        .request-detail .request-body { padding: 24px; }
+        .request-detail .request-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding-bottom: 24px; }
+        .request-detail .request-label { margin-bottom: 6px; font-size: 13px; color: var(--tblr-secondary, #667382); }
+        .request-detail .request-value { overflow-wrap: anywhere; }
+        .request-detail .request-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--tblr-border-color, #dadfe5); }
+        .request-detail .request-section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+        .request-detail .request-text { margin: 0; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .request-detail .request-document-title { font-size: 20px; font-weight: 600; overflow-wrap: anywhere; }
+        .request-detail .request-items-scroll { max-height: 340px; overflow: auto; border: 1px solid var(--tblr-border-color, #dadfe5); border-radius: 8px; }
+        .request-detail .request-items { width: 100%; min-width: 520px; margin: 0; }
+        .request-detail .request-items thead th { position: sticky; top: 0; z-index: 1; background: var(--tblr-bg-surface-secondary, #f6f8fb); }
+        .request-detail .request-items th, .request-detail .request-items td { padding: 14px 16px; }
+        .request-detail .request-item-name { overflow-wrap: anywhere; }
+        .request-detail .request-money { white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .request-detail .request-total { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 12px; padding: 16px; border-radius: 8px; background: var(--tblr-bg-surface-secondary, #f6f8fb); }
+        .request-detail .request-total strong { font-size: 22px; color: var(--tblr-primary, #206bc4); }
+        .request-detail .request-comment { padding: 16px; border-radius: 8px; background: var(--tblr-bg-surface-secondary, #f6f8fb); }
+
+        @media (max-width: 700px) {
+            .request-detail { padding: 12px; }
+            .request-detail .request-header, .request-detail .request-body { padding: 16px; }
+            .request-detail .request-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+            .request-detail .request-heading { font-size: 21px; }
+        }
+        .request-detail .approval-detail-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 20px 30px; }
+        .request-detail .approval-edit-button { display: inline-flex; align-items: center; justify-content: center; min-width: 88px; min-height: 40px; padding: 8px 20px; border: 1px solid var(--tblr-primary, #206bc4); border-radius: 6px; background: transparent; color: var(--tblr-primary, #206bc4); font-size: 14px; font-weight: 600; text-decoration: none; transition: background .15s, color .15s; }
+        .request-detail .approval-edit-button:hover { background: var(--tblr-primary, #206bc4); color: #fff; }
+        .request-detail .approval-edit-button:focus-visible { outline: 2px solid var(--tblr-primary, #206bc4); outline-offset: 3px; }
+        .request-detail .approval-delete-form { margin: 0; }
+        .request-detail .approval-delete-button { min-width: 88px; min-height: 40px; padding: 8px 20px; border: 1px solid var(--tblr-danger, #d63939); border-radius: 6px; background: transparent; color: var(--tblr-danger, #d63939); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .request-detail .approval-delete-button:hover { background: var(--tblr-danger, #d63939); color: #fff; }
+        .request-detail .approval-delete-button:focus-visible { outline: 2px solid var(--tblr-danger, #d63939); outline-offset: 3px; }
+        .request-detail .approval-delete-button:disabled { opacity: .5; cursor: not-allowed; }
+        .request-detail .request-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+        .request-detail .request-file { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--tblr-border-color, #e2e8f0); border-radius: 8px; color: inherit; text-decoration: none; }
+        .request-detail .request-file:hover { background: var(--tblr-bg-surface-secondary, #f8fafc); }
+        .request-detail .request-file:focus-visible { outline: 2px solid var(--tblr-primary, #206bc4); outline-offset: 3px; }
+        .request-detail .request-file-info { flex: 1; min-width: 0; }
+        .request-detail .request-file-name { display: block; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
+        .request-detail .request-file-size { display: block; margin-top: 4px; font-size: 12px; color: var(--tblr-secondary, #667382); }
+        /* 결재자 전용 승인 · 반려 입력폼 */
+        .request-detail .approval-status-form { margin: 0; padding: 20px; border: 1px solid var(--tblr-border-color, #dadfe5); border-radius: 10px; background: var(--tblr-bg-surface-secondary, #f6f8fb); }
+        .request-detail .approval-status-description { margin: 0 0 16px; color: var(--tblr-secondary, #667382); font-size: 13px; line-height: 1.6; }
+        .request-detail .approval-status-comment { width: 100%; min-height: 120px; resize: vertical; }
+        .request-detail .approval-status-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+        .request-detail .approval-status-buttons .btn { min-width: 88px; min-height: 40px; }
+        /* 승인 문서: 결재 상태 왼쪽 엑셀 아이콘 */
+        .request-detail .approval-status-tools { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .request-detail .approval-excel-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid #b3dcc6; border-radius: 8px; background: #e9f7ee; color: #217346; }
+        .request-detail .approval-excel-icon svg { display: block; }
+    </style>
+
+    <article class="request-paper">
+        <header class="request-header">
+            <div>
+                <div class="text-secondary small">ELECTRONIC APPROVAL</div>
+                <h2 class="request-heading proposal-form-name">품의서 상세보기</h2>
+            </div>
+
+            <div class="approval-status-tools">
+                <a class="approval-excel-icon" th:if="${viewApprovalData.approvalStatus == 'APPROVE'}" th:href="@{/downloadProposalExcel(approvalId=${viewApprovalData.approvalId}, keyType=${viewApprovalData.eaType})}" aria-label="기안서 엑셀 다운로드" title="엑셀 다운로드">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="10" y="3" width="11" height="18" rx="2" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M14 8h4M14 12h4M14 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <rect x="2" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+                        <path d="m5.5 9.5 5 5m0-5-5 5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+                    </svg>
+                </a>
+                <span class="request-status"
+                      th:classappend="${viewApprovalData.approvalStatus == 'APPROVE' ? 'is-approved' : (viewApprovalData.approvalStatus == 'REJECT' ? 'is-rejected' : (viewApprovalData.approvalStatus == 'PENDING' ? '' : 'is-other'))}"
+                      th:text="${viewApprovalData.approvalStatus == 'PENDING' ? '결재 대기' : (viewApprovalData.approvalStatus == 'APPROVE' ? '승인 완료' : (viewApprovalData.approvalStatus == 'REJECT' ? '반려' : '상태 확인 필요'))}">
+                </span>
+            </div>
+        </header>
+
+        <div class="request-body">
+
+            <div class="request-meta">
+                <div>
+                    <div class="request-label">소속 부서</div>
+                    <div class="request-value" th:text="${infoByEmployeeId.departmentType != null ? infoByEmployeeId.departmentType : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">소속 팀</div>
+                    <div class="request-value" th:text="${infoByEmployeeId.departmentName != null ? infoByEmployeeId.departmentName : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">기안자</div>
+                    <div class="request-value" th:text="${viewApprovalData.employeeName != null ? viewApprovalData.employeeName : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">결재권자</div>
+                    <div class="request-value" th:text="${viewApprovalData.approverName != null ? viewApprovalData.approverName : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">작성일시</div>
+                    <div class="request-value" th:text="${viewApprovalData.approvalWriteAt != null ? #temporals.format(viewApprovalData.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">수정일시</div>
+                    <div class="request-value" th:text="${viewApprovalData.approvalUpdateAt != null ? #temporals.format(viewApprovalData.approvalUpdateAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">처리일시</div>
+                    <div class="request-value" th:text="${viewApprovalData.approvalProcessedAt != null ? #temporals.format(viewApprovalData.approvalProcessedAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div>
+                </div>
+
+                <div>
+                    <div class="request-label">집행 예정일</div>
+                    <div class="request-value" th:text="${viewApprovalData.approvalRequestExecutionDate != null ? #temporals.format(viewApprovalData.approvalRequestExecutionDate, 'yyyy-MM-dd') : '—'}"></div>
+                </div>
+            </div>
+
+            <section class="request-section mt-0">
+                <h3 class="request-section-title">제목</h3>
+                <div class="request-document-title" th:text="${viewApprovalData.approvalRequestTitle != null ? viewApprovalData.approvalRequestTitle : '—'}"></div>
+            </section>
+
+            <section class="request-section">
+                <h3 class="request-section-title">품의 사유</h3>
+                <p class="request-text" th:text="${viewApprovalData.approvalRequestContent != null ? viewApprovalData.approvalRequestContent : '—'}"></p>
+            </section>
+
+            <section class="request-section">
+                <h3 class="request-section-title">구매 물품</h3>
+
+                <div class="request-items-scroll">
+                    <table class="table table-vcenter request-items">
+                        <thead>
+                        <tr>
+                            <th style="width: 70px;">번호</th>
+                            <th>물품 이름</th>
+                            <th class="text-end" style="width: 180px;">금액</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="items, itemsCount : ${viewRequestItemList}">
+                            <td class="text-secondary" th:text="${itemsCount.count}"></td>
+                            <td class="request-item-name" th:text="${items.itemName}"></td>
+                            <td class="text-end request-money" th:text="${items.itemAmount + ' 원'}"></td>
+                        </tr>
+
+                        <tr th:if="${viewRequestItemList == null or #lists.isEmpty(viewRequestItemList)}">
+                            <td colspan="3" class="text-center text-secondary py-4">등록된 구매 물품이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="request-total">
+                    <span>총 품의 금액</span>
+                    <strong class="request-money" th:text="${#numbers.formatInteger(viewApprovalData.approvalRequestTotalMoney, 1, 'COMMA') + ' 원'}"></strong>
+                </div>
+            </section>
+
+            <section class="request-section">
+                <h3 class="request-section-title">첨부파일 <span class="text-secondary" th:text="${viewAttachmentList != null ? '(' + #lists.size(viewAttachmentList) + ')' : '(0)'}"></span></h3>
+                <div class="request-files" th:if="${viewAttachmentList != null and !#lists.isEmpty(viewAttachmentList)}">
+                    <a class="request-file" th:each="file : ${viewAttachmentList}" th:href="@{/downloadAttachment(attachmentId=${file.attachmentId})}" th:download="${file.originalFileName}">
+                        <span class="request-file-info">
+                            <span class="request-file-name" th:text="${file.originalFileName}"></span>
+                            <span class="request-file-size" th:text="${file.fileSize >= 1048576 ? #numbers.formatDecimal(file.fileSize / 1048576.0, 1, 1) + ' MB' : #numbers.formatDecimal(file.fileSize / 1024.0, 1, 1) + ' KB'}"></span>
+                        </span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-label="다운로드"><path d="M12 3v12m-4-4 4 4 4-4M5 17v4h14v-4"/></svg>
+                    </a>
+                </div>
+                <p class="text-secondary" th:if="${viewAttachmentList == null or #lists.isEmpty(viewAttachmentList)}">등록된 첨부파일이 없습니다.</p>
+            </section>
+
+            <section class="request-section">
+                <h3 class="request-section-title">결재자 코멘트</h3>
+
+                <!-- 해당 문서의 결재자이며 결재 대기 상태일 때만 처리 가능 -->
+                <form class="approval-status-form" th:if="${canProcessApproval}" th:action="@{/updateStatus}" method="post">
+                    <input type="hidden" name="approvalId" th:value="${viewApprovalData.approvalId}">
+                    <p class="approval-status-description">코멘트를 입력한 후 승인 또는 반려를 선택해 주세요.</p>
+                    <label class="form-label" for="requestApprovalComment">코멘트 <span class="text-secondary fw-normal">(선택)</span></label>
+                    <textarea class="form-control approval-status-comment" id="requestApprovalComment" name="approvalComment" rows="4" placeholder="결재 의견이나 반려 사유를 입력하세요" th:text="${viewApprovalData.approvalComment}"></textarea>
+                    <div class="approval-status-buttons">
+                        <button type="submit" class="btn btn-outline-danger" name="approvalStatus" value="REJECT">반려</button>
+                        <button type="submit" class="btn btn-success" name="approvalStatus" value="APPROVE">승인</button>
+                    </div>
+                </form>
+
+                <!-- 작성자 또는 이미 처리된 문서에서는 저장된 코멘트만 표시 -->
+                <div class="request-comment" th:unless="${canProcessApproval}">
+                    <p class="request-text" th:text="${viewApprovalData.approvalComment != null and !#strings.isEmpty(viewApprovalData.approvalComment) ? viewApprovalData.approvalComment : '등록된 코멘트가 없습니다.'}"></p>
+                </div>
+            </section>
+
+        </div>
+        <div class="approval-detail-actions" th:if="${loginEmployee != null and viewApprovalData.writerEmployeeId == loginEmployee.employeeId and viewApprovalData.approvalStatus == 'PENDING'}">
+            <a class="btn btn-outline-primary approval-edit-button" th:href="@{/openUpdateApproval(approvalId=${viewApprovalData.approvalId},keyType=${viewApprovalData.eaType})}">수정</a>
+            <form class="approval-delete-form" th:action="@{/deleteApproval}" method="post" data-approval-delete-form>
+                <input type="hidden" name="approvalId" th:value="${viewApprovalData.approvalId}">
+                <button type="submit" class="btn btn-outline-danger approval-delete-button">삭제</button>
+            </form>
+        </div>
+    </article>
+</section>
+</body>
+</html>

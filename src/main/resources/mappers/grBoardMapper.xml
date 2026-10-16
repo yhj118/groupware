@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.yhj118.groupware.grBoard.GrBoardMapper">
+
+
+    <!-- 글쓰기 -->
+    <insert id="grBoardInsert">
+        INSERT INTO gr_board (
+            employee_id,
+            title,
+            content,
+            category,
+            secret_yn
+        ) VALUES (
+            #{employeeId},
+            #{params.title},
+            #{params.content},
+            #{params.category},
+            #{params.secretYn}
+        )
+    </insert>
+
+    <!-- 글수정 -->
+    <update id="grBoardUpdate" parameterType="io.github.yhj118.groupware.grBoard.GrBoardRequest">
+        UPDATE gr_board
+            SET
+                title = #{title},
+                content = #{content},
+                category = #{category},
+                secret_yn = #{secretYn},
+                modify_date = CURRENT_TIMESTAMP()
+            WHERE gr_board_id = #{grBoardId}
+    </update>
+
+    <!-- 글삭제 -->
+    <update id="grBoardDelete" parameterType="int">
+        UPDATE gr_board
+            SET
+                delete_yn = 1
+            WHERE gr_board_id = #{grBoardId}
+    </update>
+
+    <!-- 글 목록 -->
+    <select id="grBoardList" parameterType="io.github.yhj118.groupware.util.GrBoardSerchRequest"  resultType="io.github.yhj118.groupware.grBoard.GrBoardResponse">
+        SELECT
+            COUNT(*) OVER() - ROW_NUMBER() OVER (ORDER BY q1.created_date DESC, q1.gr_board_id DESC) + 1 AS row_num,
+            q1.*, d.department_name
+            FROM (
+                SELECT
+                    gr.*,
+                    e.department_id,
+                    e.employee_name,
+                    e.employee_num
+                        FROM gr_board gr
+                            INNER JOIN employee e ON gr.employee_id = e.employee_id
+                            WHERE gr.delete_yn = 0
+                ) q1
+                INNER JOIN department d ON q1.department_id = d.department_id
+        <where>
+            <!-- 카테고리 검색 -->
+            <if test="category != null and category != '' and category != 'ALL'">
+                AND q1.category = #{category}
+            </if>
+            <!-- 검색어가 있을 때만 검색 -->
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'titleContent'">
+                        AND (q1.title LIKE CONCAT('%', #{keyword}, '%') OR q1.content LIKE CONCAT('%', #{keyword}, '%'))
+                    </when>
+                    <!-- 제목 -->
+                    <when test="searchType == 'title'">
+                        AND q1.title LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <!-- 내용 -->
+                    <when test="searchType == 'content'">
+                        AND q1.content LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <!-- 작성자 -->
+                    <when test="searchType == 'writer'">
+                        AND q1.employee_name LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <!-- 검색 종류가 없으면 제목 + 내용으로 검색 -->
+                    <otherwise>
+                        AND (q1.title LIKE CONCAT('%', #{keyword}, '%') OR q1.content LIKE CONCAT('%', #{keyword}, '%'))
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+                ORDER BY
+                    q1.created_date DESC,
+                    q1.gr_board_id DESC
+                LIMIT #{recordSize} OFFSET #{offset}
+    </select>
+
+
+    <!-- 글 조회 -->
+    <select id="grBoardView" parameterType="int" resultType="io.github.yhj118.groupware.grBoard.GrBoardResponse">
+        SELECT s1.*, d.department_name
+            FROM department d
+                JOIN (
+                    SELECT gr.gr_board_id,
+                            gr.employee_id,
+                            gr.title,
+                            gr.content,
+                            gr.created_date,
+                            gr.modify_date,
+                            gr.category,
+                            gr.secret_yn,
+                            gr.view_cnt,
+                            e.department_id,
+                            e.employee_name
+                        FROM gr_board gr
+                        JOIN employee e
+                        ON gr.employee_id  = e.employee_id
+                    ) s1
+                ON d.department_id = s1.department_id
+                WHERE s1.gr_board_id = #{grBoardId}
+    </select>
+
+    <!-- 글 조회수 +1 증가 -->
+    <update id="grBoardPlusCnt" parameterType="int">
+        UPDATE gr_board
+            SET view_cnt = view_cnt + 1
+                WHERE gr_board_id = #{grBoardId}
+    </update>
+
+
+    <!-- 일반글 전체 개수  -->
+    <select id="grBoardCount" parameterType="io.github.yhj118.groupware.util.GrBoardSerchRequest" resultType="int">
+        SELECT COUNT(*)
+            FROM (
+                SELECT gr.*, e.department_id, e.employee_name
+                    FROM gr_board gr
+                    INNER JOIN employee e
+                        ON gr.employee_id = e.employee_id
+                        WHERE gr.delete_yn = 0
+                ) q1
+                INNER JOIN department d ON q1.department_id = d.department_id
+        <where>
+            <!-- 카테고리 검색 -->
+            <if test="category != null and category != '' and category != 'ALL'">
+                AND q1.category = #{category}
+            </if>
+
+            <!-- 검색어가 있을 때만 검색 -->
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <!-- 제목 + 내용 -->
+                    <when test="searchType == 'titleContent'">
+                        AND (q1.title LIKE CONCAT('%', #{keyword}, '%') OR q1.content LIKE CONCAT('%', #{keyword}, '%'))
+                    </when>
+                    <!-- 제목 -->
+                    <when test="searchType == 'title'">
+                        AND q1.title LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <!-- 내용 -->
+                    <when test="searchType == 'content'">
+                        AND q1.content LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <!-- 작성자 -->
+                    <when test="searchType == 'writer'">
+                        AND q1.employee_name LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <!-- 검색 종류가 없으면 제목 + 내용으로 검색 -->
+                    <otherwise>
+                        AND (q1.title LIKE CONCAT('%', #{keyword}, '%') OR q1.content LIKE CONCAT('%', #{keyword}, '%'))
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+
+
+
+</mapper>

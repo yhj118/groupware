@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+
+<body class="d-flex flex-column bg-light">
+    <div class="container py-4" style="max-width: 720px;">
+
+        <!-- 그룹웨어 이름 -->
+        <div class="text-center mb-4">
+            <h1 class="mb-2">SK hynix Intranet Groupware</h1>
+            <p class="text-secondary mb-0">
+                SK하이닉스 인트라넷 그룹웨어 시스템
+            </p>
+        </div>
+
+        <!-- 회원가입 카드 -->
+        <div class="card card-md">
+            <div class="card-body">
+
+                <h2 class="card-title text-center mb-4">사원 등록</h2>
+                <p class="text-secondary text-center mb-4">등록 신청 후 관리자의 승인이 필요합니다.</p>
+
+                <form th:action="@{/signUp}" method="post" id="signUpForm" autocomplete="off" enctype="multipart/form-data">
+                                                                                            <!-- multipart/form-data: 프로필 사진 업로드를 위한, 문자열 데이터와 사진 데이터를 분리해서 서버로 전송 -->
+                    <!-- 아이디 -->
+                    <div class="mb-3">
+                        <label class="form-label d-flex" for="loginId">아이디
+                            <span class="text-danger">*</span>
+                            <span class="ms-auto" id="loginIdCheck"></span>
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="loginId" name="loginId" maxlength="10" placeholder="최대 10글자로 입력하세요." required>
+                            <button type="button" class="btn btn-outline-secondary" id="checkId">중복 확인</button>
+                        </div>
+                    </div>
+
+                    <!-- 비밀번호 -->
+                    <div class="mb-3">
+                        <label class="form-label d-flex" for="password">비밀번호
+                            <span class="text-danger">*</span>
+                            <span class="ms-auto" id="passwordConfirmCheck"></span>
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="비밀번호를 입력하세요" autocomplete="new-password" required>
+                    </div>
+
+                    <!-- 비밀번호 확인 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="passwordConfirm">비밀번호 확인<span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password" required>
+                    </div>
+
+                    <!-- 이름 / 성별 -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label d-flex" for="employeeName">이름
+                                <span class="text-danger">*</span>
+                                <span class="text-danger" id="checkName"></span>
+                            </label>
+                            <input type="text" class="form-control" id="employeeName" name="employeeName" maxlength="10" placeholder="이름을 입력하세요" required>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label" for="gender">성별<span class="text-danger">*</span></label>
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="" selected disabled>선택하세요</option>
+                                <option value="M">남성</option>
+                                <option value="F">여성</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 생년월일 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="birthDate">생년월일<span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="birthDate" name="birthDate" required>
+                    </div>
+
+                    <!-- 부서 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="departmentId">소속 부서<span class="text-danger">*</span></label>
+                        <select class="form-select" id="departmentId" name="departmentId" required>
+                            <option th:each="team : ${findTeam}"
+                                    th:value="${team.departmentId}"
+                                    th:text="|${team.departmentType} - ${team.departmentName}|">
+                            </option>
+                        </select>
+                        <small class="form-hint">가입 승인 후 관리자가 소속 부서를 변경할 수 있습니다.</small>
+                    </div>
+
+                    <!-- 우편번호 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="postalCode">우편번호<span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="postalCode" name="postalCode" maxlength="10" placeholder="우편 번호를 입력하세요." required>
+                        </div>
+                    </div>
+
+                    <!-- 도로명 주소 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="roadAdd">도로명 주소<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="roadAdd" name="roadAddress" maxlength="100" placeholder="주소를 입력하세요" required>
+                    </div>
+
+                    <!-- 상세 주소 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="detailAdd"> 상세 주소 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="detailAdd" name="detailAddress" maxlength="100" placeholder="상세 주소를 입력하세요" required>
+                    </div>
+
+                    <!-- 프로필 사진 -->
+                    <div class="mb-4">
+                        <label class="form-label" for="profileImg">프로필 사진<span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="profileImg" name="profileImg" accept="image/jpeg, image/png" required>
+                        <small class="form-hint">JPG, JPEG, PNG 파일을 선택해주세요.</small>
+                    </div>
+
+                    <!-- 가입 신청 버튼 -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">가입 신청</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 로그인 화면 이동 -->
+        <div class="text-center text-secondary mt-3">이미 계정이 있나요?<a th:href="@{/auth/login}" href="/auth/login">로그인으로 돌아가기</a></div>
+    </div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+
+<script>
+    const checkId = document.getElementById("checkId");
+    const loginId = document.getElementById("loginId");
+    const loginIdCheck = document.getElementById("loginIdCheck");
+    let isLoginIdCheck = false; // 중복확인 상태를 false로 함으로써 아직 중복확인을 안 했다는 걸로 선언
+
+    const password = document.getElementById("password");
+    const passwordConfirm = document.getElementById("passwordConfirm");
+    const passwordConfirmCheck = document.getElementById("passwordConfirmCheck");
+    const signUpForm = document.getElementById("signUpForm");
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()])[a-zA-Z\d!@#$%^&*()]{8,12}$/;
+
+    const checkName = document.getElementById("checkName");
+    const employeeName = document.getElementById("employeeName");
+    const nameRegex = /^[가-힣]{2,}$/;
+
+
+
+    // 등록 버튼 제출
+    // form의 submit을 할 시점에 검사: 사용자가 가입버튼 클릭뿐만 아니라 Enter를 눌러도 submit이 발생하기 때문에 여기서 막는 게 효율적.
+    signUpForm.addEventListener("submit", function (event) {
+
+        // ID 중복체크
+        if (isLoginIdCheck === false) {
+            event.preventDefault(); // form 제출 거부
+            loginIdCheck.textContent = "ID 중복 확인을 확인해 주세요.";
+            loginIdCheck.className = "ms-auto text-danger";
+            return; // "submit" 함수 종료
+        }
+
+        // 비밀번호 정규식 및 중복 검사
+        if (passwordRegex.test(password.value) === true) {
+            if (password.value !== passwordConfirm.value) {
+                event.preventDefault();
+                passwordConfirmCheck.textContent = "비밀번호가 일치하지 않습니다.";
+                passwordConfirmCheck.className = "ms-auto text-danger";
+                return;
+            } else {
+                passwordConfirmCheck.textContent = "비밀번호가 일치합니다.";
+                passwordConfirmCheck.className = "ms-auto text-success";
+            }
+        } else {
+            event.preventDefault();
+            passwordConfirmCheck.textContent = "특수문자를 포함하여 8~12글자로 작성해주세요.";
+            passwordConfirmCheck.className = "ms-auto text-danger";
+            return;
+        }
+
+        // 이름 정규식
+        if (nameRegex.test(employeeName.value) === false) {
+            event.preventDefault();
+            checkName.textContent = "이름은 두 글자 이상 입력해주세요.";
+            checkName.className = "ms-auto text-danger";
+            return;
+        }
+
+    }); // end signUpForm
+
+    // ID 중복 확인, ajax(비동기)
+    checkId.addEventListener("click", function () {
+        fetch("/loginIdCheck?loginId=" + loginId.value) // 요청할 url + 보낼 데이터
+            .then(response => response.json()) // 응답온 데이터를 JS에서 사용할 수 있는 json 데이터로 변환
+            .then(result => { // 변환된 json 데이터를 입맛에 맞게 처리
+                if (result === 0) {
+                    loginIdCheck.textContent = "사용 가능한 아이디입니다.";
+                    loginIdCheck.className = "ms-auto text-success";
+                    isLoginIdCheck = true;
+                } else {
+                    loginIdCheck.textContent = "중복된 아이디입니다.";
+                    loginIdCheck.className = "ms-auto text-danger";
+                    isLoginIdCheck = false;
+
+                    loginId.value = "";
+                    loginId.focus();
+                }
+            });
+    });
+
+    // ID 수정 시 중복확인 결과 무효화
+    // 사용자가 ID 수정할 경우 "input" 이벤트를 감지해 자동으로 함수 실행
+    loginId.addEventListener("input", function () {
+        isLoginIdCheck = false;
+        loginIdCheck.textContent = "";
+    });
+
+
+</script>
+</body>
+</html>

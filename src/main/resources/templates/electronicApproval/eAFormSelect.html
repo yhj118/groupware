@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+
+    <style>
+        .form-template-card {
+            color: inherit;
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-template-card:hover {
+            color: inherit;
+            transform: translateY(-4px);
+            box-shadow: 0 0.5rem 1rem rgba(24, 36, 51, 0.12);
+        }
+
+        .form-template-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
+            padding: 28px;
+            background: #f6f8fb;
+            border-bottom: 1px solid var(--tblr-border-color);
+        }
+
+        .document-preview {
+            position: relative;
+            width: 140px;
+            height: 170px;
+            padding: 24px 18px 18px;
+            background: #ffffff;
+            border: 1px solid #dce1e7;
+            border-radius: 6px;
+            box-shadow: 0 8px 20px rgba(24, 36, 51, 0.1);
+        }
+
+        .document-preview::before {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            width: 44px;
+            height: 6px;
+            content: "";
+            background: var(--template-color);
+            border-radius: 10px;
+            transform: translateX(-50%);
+        }
+
+        .document-title-line {
+            width: 72%;
+            height: 8px;
+            margin: 12px auto 22px;
+            background: #c8d0da;
+            border-radius: 10px;
+        }
+
+        .document-line {
+            height: 6px;
+            margin-bottom: 10px;
+            background: #e6e9ed;
+            border-radius: 10px;
+        }
+
+        .document-line.short {
+            width: 64%;
+        }
+
+        .document-box {
+            height: 36px;
+            margin-top: 15px;
+            border: 2px solid color-mix(in srgb, var(--template-color) 24%, white);
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--template-color) 8%, white);
+        }
+
+        .template-blue { --template-color: #206bc4; }
+        .template-green { --template-color: #2fb344; }
+        .template-yellow { --template-color: #f59f00; }
+        .template-azure { --template-color: #4299e1; }
+        .template-red { --template-color: #d63939; }
+        .template-purple { --template-color: #ae3ec9; }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+
+    <div class="page-wrapper">
+
+        <!-- 네비게이션 -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Approval</div>
+                        <h2 class="page-title">결재 양식 선택</h2>
+                        <div class="text-secondary mt-1">작성할 결재 문서의 양식을 선택해 주세요.</div>
+                    </div>
+
+                    <div class="col-auto ms-auto">
+                        <a th:href="@{/approval}" class="btn btn-outline-secondary">목록으로</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="row row-cards">
+
+                    <!-- 기안서 -->
+                    <div class="col-sm-6 col-lg-4">
+                        <a th:href="@{/openFormProposal(employeeId=${loginEmployee.employeeId})}" class="card form-template-card template-blue">
+                            <div class="form-template-image">
+                                <div class="document-preview" aria-hidden="true">
+                                    <div class="document-title-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line short"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-box"></div>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="card-title mb-1">기안서</h3>
+                                <div class="text-secondary small">일반 업무 기안</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 품의서 -->
+                    <div class="col-sm-6 col-lg-4">
+                        <a th:href="@{/openFormRequest(employeeId=${loginEmployee.employeeId})}" class="card form-template-card template-green">
+                            <div class="form-template-image">
+                                <div class="document-preview" aria-hidden="true">
+                                    <div class="document-title-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line short"></div>
+                                    <div class="document-box"></div>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="card-title mb-1">품의서</h3>
+                                <div class="text-secondary small">비용 및 구매 품의</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 휴가 신청서 -->
+                    <div class="col-sm-6 col-lg-4">
+                        <a th:href="@{/openFormVacation(employeeId=${loginEmployee.employeeId})}" class="card form-template-card template-yellow">
+                            <div class="form-template-image">
+                                <div class="document-preview" aria-hidden="true">
+                                    <div class="document-title-line"></div>
+                                    <div class="document-line short"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-box"></div>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="card-title mb-1">휴가 신청서</h3>
+                                <div class="text-secondary small">연차 및 휴가 신청</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 출장 신청서 -->
+                    <div class="col-sm-6 col-lg-4">
+                        <a th:href="@{/openFormBusiness(employeeId=${loginEmployee.employeeId})}" class="card form-template-card template-azure">
+                            <div class="form-template-image">
+                                <div class="document-preview" aria-hidden="true">
+                                    <div class="document-title-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line short"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-box"></div>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="card-title mb-1">출장 신청서</h3>
+                                <div class="text-secondary small">출장 일정 및 목적 신청</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 경위/시말서 -->
+                    <div class="col-sm-6 col-lg-4">
+                        <a th:href="@{/openFormFactReport(employeeId=${loginEmployee.employeeId})}" class="card form-template-card template-red">
+                            <div class="form-template-image">
+                                <div class="document-preview" aria-hidden="true">
+                                    <div class="document-title-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line short"></div>
+                                    <div class="document-box"></div>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="card-title mb-1">경위/시말서</h3>
+                                <div class="text-secondary small">사건 경위 및 조치 보고</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 업무 보고서 -->
+                    <div class="col-sm-6 col-lg-4">
+                        <a th:href="@{/openFormWorkReport(employeeId=${loginEmployee.employeeId})}" class="card form-template-card template-purple">
+                            <div class="form-template-image">
+                                <div class="document-preview" aria-hidden="true">
+                                    <div class="document-title-line"></div>
+                                    <div class="document-line short"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-line"></div>
+                                    <div class="document-box"></div>
+                                </div>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="card-title mb-1">업무 보고서</h3>
+                                <div class="text-secondary small">업무 진행 및 결과 보고</div>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+
+</body>
+</html>

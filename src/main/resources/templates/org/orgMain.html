@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        .organization-wrapper { width: 100%; overflow-x: auto; padding-bottom: 16px; }
+        .organization-tree { min-width: 1100px; width: max-content; padding: 24px; text-align: center; }
+        .company-node { display: inline-block; min-width: 240px; padding: 18px 24px; border: 1px solid var(--tblr-border-color); border-radius: 10px; background: var(--tblr-bg-surface); font-weight: 700; font-size: 1.1rem; }
+        .tree-line { width: 1px; height: 32px; margin: 0 auto; background: var(--tblr-border-color); }
+        .department-row { display: flex; justify-content: flex-start; align-items: flex-start; gap: 40px; position: relative; width: max-content; margin: 0 auto; }
+        .department-branch { min-width: 300px; position: relative; }
+        .department-card { margin-bottom: 0px; }
+        .department-name { font-size: 1rem; font-weight: 700; }
+        .team-list { display: grid; gap: 16px; }
+        .team-node { position: relative; }
+        .team-card { padding: 14px; border: 1px solid var(--tblr-border-color); border-radius: 8px; background: var(--tblr-bg-surface); }
+        .team-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .team-name { font-weight: 600; }
+        .team-action { flex-shrink: 0; }
+        .team-members { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+        .employee-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px; border: 1px solid var(--tblr-border-color); border-radius: 8px; background: var(--tblr-bg-surface); text-align: left; cursor: pointer; }
+        .employee-info { min-width: 0; }
+        .employee-name { font-weight: 600; }
+        .employee-sub { font-size: .8rem; color: var(--tblr-secondary-color); }
+        .d-none { display: none !important; }
+        .profile-header { display: flex; align-items: center; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--tblr-border-color); }
+        .profile-avatar { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 1px solid var(--tblr-border-color); }
+        .profile-name { font-size: 1.4rem; font-weight: 700; }
+        .profile-level { margin-top: 4px; color: var(--tblr-secondary-color); }
+        .profile-info { margin-top: 20px; }
+        .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--tblr-border-color); }
+        .profile-label { font-weight: 600; color: var(--tblr-secondary-color); }
+        .employee-id-card { padding: 22px; border: 1px solid var(--tblr-border-color); border-radius: 14px; background: var(--tblr-bg-surface); color: var(--tblr-body-color); }
+        .employee-id-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 2px solid var(--tblr-border-color); }
+        .employee-id-title { font-size: .85rem; font-weight: 700; letter-spacing: .08em; }
+        .employee-id-number { font-size: .8rem; color: var(--tblr-secondary-color); }
+        .employee-id-main { display: flex; gap: 24px; padding: 24px 0; }
+        .employee-photo-area { flex: 0 0 auto; }
+        .employee-id-photo { width: 110px; height: 135px; object-fit: cover; border-radius: 6px; border: 1px solid var(--tblr-border-color); background: var(--tblr-bg-surface); }
+        .employee-id-info { flex: 1; min-width: 0; }
+        .employee-id-name { margin-bottom: 18px; font-size: 1.6rem; font-weight: 800; letter-spacing: .04em; }
+        .employee-id-row { display: grid; grid-template-columns: 70px 1fr; gap: 12px; padding: 5px 0; font-size: .9rem; }
+        .employee-id-label { font-weight: 600; color: var(--tblr-secondary-color); }
+        .employee-id-bottom { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; padding-top: 16px; border-top: 1px solid var(--tblr-border-color); font-size: .85rem; }
+        .employee-id-small-label { margin-bottom: 3px; font-size: .72rem; font-weight: 600; color: var(--tblr-secondary-color); }
+        .department-team-line { width: 1px; height: 24px; margin: 0 auto; background: var(--tblr-border-color); }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('org')}"></div>
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Employee</div>
+                        <h2 class="page-title">조직 현황</h2>
+                        <div class="text-secondary mt-1">팀 구조를 확인하고 필요한 팀의 구성원을 펼쳐볼 수 있습니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">전체 부서 및 팀 현황</h3>
+                            <div class="text-secondary mt-1">총 <span th:text="${findOrgSummary.totalDepartmentName}"></span>개 팀 · <span th:text="${findOrgSummary.totalEmployeeId}"></span>명</div>
+                        </div>
+                        <div class="card-actions">
+                            <button type="button" id="toggleAllMembersButton" class="btn btn-outline-secondary" onclick="toggleAllMembers()">전체 펼치기</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="captureOrganization()">조직도 캡처</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="organization-wrapper">
+                            <div class="organization-tree">
+                                <div class="company-node">Groupware <div class="text-secondary small mt-1">전체 <span th:text="${findOrgSummary.totalEmployeeId}"></span>명</div></div>
+                                <div class="tree-line"></div>
+                                <div class="department-row" id="departmentRow"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal modal-blur fade" id="employeeProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">사원 프로필</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="employee-id-card">
+                    <div class="employee-id-top">
+                        <div class="employee-id-title">GROUPWARE 사원 카드</div>
+                        <div class="employee-id-number"><span id="modalEmployeeNum"></span></div>
+                    </div>
+                    <div class="employee-id-main">
+                        <div class="employee-photo-area"><img id="modalProfileImg" class="employee-id-photo" alt="프로필 사진"></div>
+                        <div class="employee-id-info">
+                            <div class="employee-id-name"><span id="modalEmployeeName"></span></div>
+                            <div class="employee-id-row"><span class="employee-id-label">아이디</span><span id="modalLoginId"></span></div>
+                            <div class="employee-id-row"><span class="employee-id-label">본부</span><span id="modalDepartmentType"></span></div>
+                            <div class="employee-id-row"><span class="employee-id-label">팀</span><span id="modalDepartmentName"></span></div>
+                            <div class="employee-id-row"><span class="employee-id-label">직급</span><span id="modalLevel"></span></div>
+                        </div>
+                    </div>
+                    <div class="employee-id-bottom">
+                        <div><div class="employee-id-small-label">재직상태</div><div id="modalEmploymentStatus"></div></div>
+                        <div><div class="employee-id-small-label">등록상태</div><div id="modalApprovalStatus"></div></div>
+                        <div><div class="employee-id-small-label">권한</div><div id="modalRole"></div></div>
+                        <div><div class="employee-id-small-label">퇴사일시</div><div id="modalResignedAt"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button type="button" id="openEmployeeModalButton" class="d-none" data-bs-toggle="modal" data-bs-target="#employeeProfileModal"></button>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script th:src="@{/js/html2canvas.min.js}"></script>
+<script th:inline="javascript">
+    const orgList = /*[[${findOrgList}]]*/ [];
+    const departments = {};
+
+    orgList.forEach(function (org) {
+        const departmentType = org.departmentType;
+        if (!departments[departmentType]) departments[departmentType] = {};
+
+        const departmentName = org.departmentName;
+        if (!departments[departmentType][departmentName]) departments[departmentType][departmentName] = [];
+
+        if (org.employeeId != null) {
+            departments[departmentType][departmentName].push({
+                employeeId: org.employeeId,
+                employeeName: org.employeeName,
+                level: org.level,
+                profileImgPath: org.profileImgPath
+            });
+        }
+    });
+
+    function renderOrganization() {
+        const departmentRow = document.getElementById("departmentRow");
+
+        Object.entries(departments).forEach(function ([departmentType, teams]) {
+            const branch = document.createElement("div");
+            branch.className = "department-branch";
+
+            let teamsHtml = "";
+
+            Object.entries(teams).forEach(function ([teamName, employees]) {
+                let membersHtml = "";
+
+                employees.forEach(function (employee) {
+                    membersHtml += `<div class="employee-item" onclick="openEmployeeProfile(${employee.employeeId})"><div class="employee-info"><div class="employee-name">${employee.employeeName}</div><div class="employee-sub">${employee.level}</div></div></div>`;
+                });
+
+                teamsHtml += `<div class="team-node"><div class="team-card"><div class="team-header"><div class="team-name">${teamName} <span class="text-secondary small">(${employees.length}명)</span></div><div class="team-action"><button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleMembers(this)">팀원 보기</button></div></div><div class="employee-list d-none">${membersHtml}</div></div></div>`;
+            });
+
+            branch.innerHTML = `<div class="card department-card"><div class="card-body"><div class="department-name">${departmentType}</div></div></div><div class="department-team-line"></div><div class="team-list">${teamsHtml}</div>`;
+
+            departmentRow.appendChild(branch);
+        });
+    }
+
+    renderOrganization();
+
+    function toggleMembers(button) {
+        const teamNode = button.closest(".team-node");
+        const employeeList = teamNode.querySelector(".employee-list");
+        employeeList.classList.toggle("d-none");
+        button.textContent = employeeList.classList.contains("d-none") ? "팀원 보기" : "팀원 접기";
+    }
+
+    function openEmployeeProfile(employeeId) {
+        const orgScrollY = window.scrollY;
+
+        fetch("/org/employee/" + employeeId)
+            .then(function (response) { return response.json(); })
+            .then(function (employee) {
+                document.getElementById("modalEmployeeName").textContent = employee.employeeName;
+                document.getElementById("modalEmployeeNum").textContent = employee.employeeNum;
+                document.getElementById("modalLevel").textContent = employee.level;
+                document.getElementById("modalDepartmentType").textContent = employee.departmentType;
+                document.getElementById("modalDepartmentName").textContent = employee.departmentName;
+                document.getElementById("modalLoginId").textContent = employee.loginId;
+                document.getElementById("modalProfileImg").src = employee.profileImgPath;
+
+                const employmentStatus = document.getElementById("modalEmploymentStatus");
+                employmentStatus.textContent = employee.employmentStatus;
+                employmentStatus.classList.remove("badge", "bg-green-lt", "bg-yellow-lt", "bg-red-lt");
+                if (employee.employmentStatus === "재직중") employmentStatus.classList.add("badge", "bg-green-lt");
+                else if (employee.employmentStatus === "휴가중") employmentStatus.classList.add("badge", "bg-yellow-lt");
+                else if (employee.employmentStatus === "퇴사") employmentStatus.classList.add("badge", "bg-red-lt");
+
+                const approvalStatus = document.getElementById("modalApprovalStatus");
+                approvalStatus.textContent = employee.approvalStatus;
+                approvalStatus.classList.remove("badge", "bg-yellow-lt", "bg-green-lt", "bg-red-lt");
+                if (employee.approvalStatus === "사원등록 승인 전") approvalStatus.classList.add("badge", "bg-yellow-lt");
+                else if (employee.approvalStatus === "사원등록 승인") approvalStatus.classList.add("badge", "bg-green-lt");
+                else if (employee.approvalStatus === "사원등록 거절") approvalStatus.classList.add("badge", "bg-red-lt");
+
+                const resignedAt = document.getElementById("modalResignedAt");
+                resignedAt.textContent = employee.resignedAt == null ? "재직중" : employee.resignedAt;
+                resignedAt.classList.remove("badge", "bg-green-lt", "bg-red-lt");
+                resignedAt.classList.add("badge", employee.resignedAt == null ? "bg-green-lt" : "bg-red-lt");
+
+                const role = document.getElementById("modalRole");
+                role.textContent = employee.role === "ADMIN" ? "관리자" : "비관리자";
+                role.classList.remove("badge", "bg-blue-lt", "bg-secondary-lt");
+                role.classList.add("badge", employee.role === "ADMIN" ? "bg-blue-lt" : "bg-secondary-lt");
+
+                document.getElementById("openEmployeeModalButton").click();
+            });
+
+        document.getElementById("employeeProfileModal").addEventListener("hidden.bs.modal", function () { window.scrollTo(0, orgScrollY); });
+    }
+
+    // 조직도 캡쳐
+    async function captureOrganization() {
+
+        const target = document.querySelector(".organization-tree");
+
+        const canvas = await html2canvas(target, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true
+        });
+
+        const link = document.createElement("a");
+
+        link.download = "조직현황.png";
+        link.href = canvas.toDataURL("image/png");
+
+        link.click();
+    }
+
+    let allMembersExpanded = false;
+
+    // 조직도 전체 펼치기 및 접기
+    function toggleAllMembers() {
+
+        const employeeLists = document.querySelectorAll(".employee-list");
+        const teamButtons = document.querySelectorAll(".team-node button");
+        const toggleButton = document.getElementById("toggleAllMembersButton");
+
+        allMembersExpanded = !allMembersExpanded;
+
+        employeeLists.forEach(function (employeeList) {
+
+            if (allMembersExpanded) {
+                employeeList.classList.remove("d-none");
+            } else {
+                employeeList.classList.add("d-none");
+            }
+
+        });
+
+        teamButtons.forEach(function (button) {
+
+            button.textContent = allMembersExpanded
+                ? "팀원 접기"
+                : "팀원 보기";
+
+        });
+
+        toggleButton.textContent = allMembersExpanded
+            ? "전체 접기"
+            : "전체 펼치기";
+    }
+</script>
+</body>
+</html>

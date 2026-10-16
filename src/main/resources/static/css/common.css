@@ -1,0 +1,130 @@
+/* 페이지마다 스크롤바 유무가 달라도 콘텐츠의 가로 위치를 고정합니다. */
+html {
+    overflow-y: scroll;
+}
+
+/* 다크모드 커스텀 색상 */
+[data-bs-theme="dark"] {
+    --tblr-body-bg: #101114;
+    --tblr-bg-surface: #171a1f;
+    --tblr-bg-surface-secondary: #1d2127;
+    --tblr-border-color: #2a2f36;
+    --tblr-body-color: #e8ecf1;
+    --tblr-secondary-color: #9aa4b2;
+    --tblr-primary: #4c8bf5;
+    --tblr-primary-rgb: 76, 139, 245;
+}
+
+/* 전체 배경 */
+[data-bs-theme="dark"] body,
+[data-bs-theme="dark"] .page,
+[data-bs-theme="dark"] .page-wrapper,
+[data-bs-theme="dark"] .page-body {
+    background-color: #101114 !important;
+    color: #e8ecf1 !important;
+}
+
+/* 카드 */
+[data-bs-theme="dark"] .card {
+    background-color: #171a1f !important;
+    border-color: #2a2f36 !important;
+    color: #e8ecf1 !important;
+}
+
+[data-bs-theme="dark"] .card-header,
+[data-bs-theme="dark"] .card-footer {
+    background-color: #171a1f !important;
+    border-color: #2a2f36 !important;
+}
+
+/* 상단 navbar */
+[data-bs-theme="dark"] .navbar,
+[data-bs-theme="dark"] .header,
+[data-bs-theme="dark"] .page-header {
+    background-color: #101114 !important;
+    border-color: #2a2f36 !important;
+    color: #e8ecf1 !important;
+}
+
+/* 텍스트 */
+[data-bs-theme="dark"] .text-secondary,
+[data-bs-theme="dark"] .form-hint,
+[data-bs-theme="dark"] .page-pretitle {
+    color: #9aa4b2 !important;
+}
+
+/* 입력창 */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] textarea {
+    background-color: #1d2127 !important;
+    border-color: #2a2f36 !important;
+    color: #e8ecf1 !important;
+}
+
+[data-bs-theme="dark"] .form-control::placeholder,
+[data-bs-theme="dark"] textarea::placeholder {
+    color: #7f8894 !important;
+}
+
+/* 테이블 */
+[data-bs-theme="dark"] .table {
+    --tblr-table-bg: #171a1f;
+    --tblr-table-striped-bg: #1b1f25;
+    --tblr-table-hover-bg: #20242b;
+    color: #e8ecf1 !important;
+}
+
+[data-bs-theme="dark"] .table > :not(caption) > * > * {
+    border-bottom-color: #2a2f36 !important;
+    background-color: transparent !important;
+}
+
+/* 리스트, 검색영역 */
+[data-bs-theme="dark"] .list-group-item {
+    background-color: #171a1f !important;
+    border-color: #2a2f36 !important;
+    color: #e8ecf1 !important;
+}
+
+/* 페이지네이션 */
+[data-bs-theme="dark"] .page-link {
+    background-color: #171a1f !important;
+    border-color: #2a2f36 !important;
+    color: #e8ecf1 !important;
+}
+
+[data-bs-theme="dark"] .page-item.active .page-link {
+    background-color: #4c8bf5 !important;
+    border-color: #4c8bf5 !important;
+    color: #ffffff !important;
+}
+
+/* 버튼 */
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: #c7d0db !important;
+    border-color: #3a414b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+    background-color: #232830 !important;
+    border-color: #4a5360 !important;
+    color: #ffffff !important;
+}
+
+/* 드롭다운 */
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #171a1f !important;
+    border-color: #2a2f36 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: #e8ecf1 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: #20242b !important;
+}
+
+/* --------- 다크모드 커스텀 색상 끝 --------- */
+

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.yhj118.groupware.schedule.ScheduleMapper">
+
+    <!-- 일정 등록 -->
+    <insert id="insertSchedule">
+        INSERT INTO schedule (
+            employee_id,
+            approval_id,
+            schedule_type,
+            schedule_title,
+            schedule_content,
+            schedule_start,
+            schedule_end
+        ) VALUES (
+            #{employeeId},
+            #{params.approvalId},
+            #{params.scheduleType},
+            #{params.scheduleTitle},
+            #{params.scheduleContent},
+            #{params.scheduleStart},
+            #{params.scheduleEnd}
+        );
+    </insert>
+
+    <!-- 일정 전체 조회 -->
+    <select id="selectAllSchedule" parameterType="int" resultType="io.github.yhj118.groupware.schedule.ScheduleResponse">
+        SELECT
+            *
+        FROM
+            schedule
+        WHERE (
+                employee_id = #{employeeId}
+                AND schedule_type IN ('PERSONAL', 'APPROVAL')
+              ) OR schedule_Type = 'COMMON'
+
+    </select>
+
+    <!-- 일정 수정 -->
+    <update id="updateSchedule">
+        UPDATE schedule
+        SET
+            schedule_title = #{params.scheduleTitle},
+            schedule_content = #{params.scheduleContent},
+            schedule_start = #{params.scheduleStart},
+            schedule_end = #{params.scheduleEnd}
+        WHERE schedule_id = #{params.scheduleId}
+        AND employee_id = #{employeeId}
+        AND (schedule_type = 'PERSONAL' OR schedule_type = 'COMMON')
+    </update>
+
+    <!-- 일정 삭제 -->
+    <delete id="deleteSchedule">
+        DELETE FROM schedule
+        WHERE schedule_id = #{scheduleId}
+        AND employee_id = #{employeeId}
+        AND schedule_type = #{scheduleType}
+    </delete>
+
+</mapper>

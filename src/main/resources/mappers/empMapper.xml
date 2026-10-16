@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 사원 등록, 수정, 탈퇴, 조회 -->
+<mapper namespace="io.github.yhj118.groupware.employee.EmpMapper">
+
+
+    <!-- 사원 등록 -->
+    <insert id = "empSignUp" parameterType = "io.github.yhj118.groupware.employee.EmpRequest"> <!-- parameterType: 넘겨받은 객체의 타입, Mapper interface에서 EmpRequest 타입을 주기 때문에 파라미터타입을 EmpRequest로 설정해준다. -->
+        INSERT INTO employee (
+            department_id,
+            employee_num,
+            login_id,
+            password,
+            employee_name,
+            gender,
+            birth_date,
+            postal_code,
+            road_address,
+            detail_address,
+            profile_img_path
+        ) VALUES (
+            #{departmentId},
+            #{employeeNum},
+            #{loginId},
+            #{password},
+            #{employeeName},
+            #{gender},
+            #{birthDate},
+            #{postalCode},
+            #{roadAddress},
+            #{detailAddress},
+            #{profileImgPath}
+        )
+    </insert>
+
+
+    <!-- 사원 수정 -->
+    <update id="empModify"> <!-- parameterType 생략: 인터페이스에서 @Param()으로 보낼 시 생략, 왜? MyBatis가 추적하여 객체의 타입을 적용. -->
+        UPDATE
+            employee
+        SET
+            login_id = #{params.loginId}, <!-- @Param()으로 받을 시 "params"의 이름을 붙이므로 필드 접근 시 params.를 붙여 접근. -->
+            employee_name = #{params.employeeName},
+            gender = #{params.gender},
+            birth_date = #{params.birthDate},
+            postal_code = #{params.postalCode},
+            road_address = #{params.roadAddress},
+            detail_address = #{params.detailAddress}
+            <if test="params.password != null and !params.password.isBlank()">
+                , password = #{params.password}
+            </if>
+            <if test="params.profileImgPath != null">
+                , profile_img_path = #{params.profileImgPath}
+            </if>
+        WHERE
+            (login_id = #{loginKey} OR employee_num = #{loginKey})
+    </update>
+
+
+    <!-- 사원 삭제 -->
+
+
+    <!-- 사원 정보 조회 -->
+    <select id="empFindByLoginKey" parameterType="java.lang.String" resultType="io.github.yhj118.groupware.employee.EmpResponse">
+        SELECT
+            e.*,
+            d.department_name,
+            d.department_type
+        FROM employee e
+        JOIN department d
+            ON e.department_id = d.department_id
+        WHERE e.login_id = #{loginKey}
+        OR e.employee_num = #{loginKey};
+    </select>
+
+
+    <!-- 사원 전체 조회 -->
+
+
+    <!-- ID 중복 확인 -->
+    <select id = "loginIdCheck" parameterType="java.lang.String" resultType="int"> <!-- resultType: 반환해주는 타입, 결과인 COUNT(*)는 int형이기 때문에 int로 작성) -->
+        SELECT
+            COUNT(*)
+        FROM
+            employee
+        WHERE
+            login_id = #{loginId}
+    </select>
+
+
+    <!-- 사번 조회 -->
+    <select id = "employeeNumCheck" parameterType="java.lang.String" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            employee
+        WHERE
+            employee_num = #{employeeNum}
+    </select>
+
+
+</mapper>

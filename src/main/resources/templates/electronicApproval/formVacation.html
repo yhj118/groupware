@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        .approval-form { max-width: 980px; margin: 0 auto; }
+        .required::after { margin-left: 3px; color: var(--tblr-danger); content: "*"; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="page-pretitle">Approval</div>
+                <h2 class="page-title">휴가 신청서 작성</h2>
+            </div>
+        </div>
+        <div class="page-body">
+            <div class="container-xl">
+                <form th:action="@{/wirteVacation}" method="post" class="card approval-form">
+                    <div class="card-header"><h3 class="card-title">휴가 신청서</h3></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label required">소속 부서</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentType + ' / ' + infoByEmployeeId.departmentName}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">신청자</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.employeeName}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">휴가 종류</label>
+                                <select class="form-select" name="vacationType">
+                                    <option value="">선택하세요</option>
+                                    <option value="ANNUAL">연차</option>
+                                    <option value="HALF_AM">오전 반차</option>
+                                    <option value="HALF_PM">오후 반차</option>
+                                    <option value="SICK">병가</option>
+                                    <option value="ETC">기타</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">신청일</label>
+                                <input type="date" class="form-control" name="vacationSubscription" th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">시작일</label>
+                                <input type="date" class="form-control" id="vacationStart" name="vacationStart">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">종료일</label>
+                                <input type="date" class="form-control" id="vacationEnd" name="vacationEnd">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">업무 인수인계</label>
+                                <textarea class="form-control" name="vacationContent" rows="15" placeholder="인수인계 담당자와 내용을 입력하세요"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a th:href="@{/approval/write}" class="btn btn-outline-secondary">취소</a>
+                        <button type="button" class="btn btn-outline-primary">임시저장</button>
+                        <button type="submit" class="btn btn-primary">결재 요청</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script>
+    // 휴가 종료일일 < 휴가 시작일
+    const vacationStart = document.getElementById('vacationStart');
+    const vacationEnd = document.getElementById('vacationEnd');
+
+    vacationStart.addEventListener('change', function () {
+        vacationEnd.min = this.value;
+
+        if (vacationEnd.value && vacationEnd.value < this.value) {
+            vacationEnd.value = '';
+        }
+    });
+</script>
+</body>
+</html>

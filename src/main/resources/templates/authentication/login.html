@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"> <!-- xmlns?? Thymeleaf 문법 사용을 위한 선언 -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}" /> <!-- Tabler CSS -->
+</head>
+<body class="page page-center">
+    <div class="container container-tight py-4">
+        <!-- 그룹웨어 이름 -->
+        <div class="text-center mb-4">
+            <h1 class="mb-2">SK hynix Intranet Groupware System</h1>
+            <p class="text-secondary mb-0">SK하이닉스 인트라넷 그룹웨어 시스템</p>
+        </div>
+
+        <!-- 로그인 카드 -->
+        <div class="card card-md">
+            <div class="card-body">
+                <!-- 로그인 제목 -->
+                <h2 class="h2 text-center mb-4">로그인</h2>
+
+                <!-- 현재 UI만 작성, 기능 추후 개발 -->
+                <form th:action="@{/goLogin}" method="post" autocomplete="off">
+
+                    <!-- 사번 또는 아이디 입력 -->
+                    <div class="mb-3">
+                        <label class="form-label" for="loginKey">사번 또는 아이디</label>
+                        <input class="form-control" type="text" id="loginKey" name="loginKey" placeholder="사번 또는 아이디를 입력하세요." autocomplete="username">
+                    </div>
+                    <!-- 패스워드 입력 -->
+                    <div class="mb-2">
+                        <label class="form-label" for="password">패스워드</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="패스워드를 입력하세요" autocomplete="current-password">
+                    </div>
+                    <!-- 로그인 상태 유지 -->
+                    <div class="mb-3">
+                        <label class="form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                            <span class="form-check-label">로그인 상태 유지</span>
+                        </label>
+                    </div>
+                    <!-- 로그인 실패 메시지 영역 -->
+                    <div class="alert alert-danger" th:if="${param.error}">
+                        사번(또는 아이디) 혹은 비밀번호를 확인해주세요.
+                    </div>
+                    <!-- 로그인 버튼 -->
+                    <div class="form-footer">
+                        <button type="submit" class="btn btn-primary w-100">로그인</button>
+                    </div>
+
+                </form>
+
+                <!-- 가입하기 버튼 -->
+                <div class="d-grid gap-2 mt-1">
+                    <a th:href="@{/openSignUp}" class="btn btn-outline-primary w-100">등록하기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script>
+
+
+</script>
+
+</body>
+</html>

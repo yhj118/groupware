@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('employee')}"></div>
+
+    <!-- 메인 영역 -->
+    <div class="page-wrapper">
+
+        <!-- 공통 Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">My Page</div>
+                        <h2 class="page-title">내 정보</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 페이지 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="row row-cards">
+
+                    <!-- 왼쪽 영역 -->
+                    <div class="col-lg-4">
+
+                        <!-- 프로필 카드 -->
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <img class="avatar avatar-2xl mb-3" th:src="${loginEmployee.profileImgPath}" alt="프로필 사진">
+                                <h2 class="mb-1" th:text="${loginEmployee.employeeName}"></h2>
+                                <div class="text-secondary mb-3" th:text="${loginEmployee.employeeNum}"></div>
+
+                                <span class="badge bg-green-lt" th:if="${loginEmployee.employmentStatus == 'EMPLOYED'}">재직중</span>
+                                <span class="badge bg-blue-lt" th:if="${loginEmployee.employmentStatus == 'ON_LEAVE'}">휴가중</span>
+                                <span class="badge bg-red-lt" th:if="${loginEmployee.employmentStatus == 'RESIGNED'}">퇴사</span>
+
+                                <span class="badge bg-blue-lt ms-1" th:if="${loginEmployee.approvalStatus == 'PENDING'}">#사원등록 승인 전</span>
+                                <span class="badge bg-green-lt ms-1" th:if="${loginEmployee.approvalStatus == 'APPROVED'}">#사원등록 승인</span>
+                                <span class="badge bg-red-lt ms-1" th:if="${loginEmployee.approvalStatus == 'REJECTED'}">#사원등록 거절</span>
+                            </div>
+                        </div>
+
+                        <!-- 계정 및 재직 정보 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">계정 및 재직 정보</h3>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="row g-4">
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">부서</div>
+                                        <div class="fw-medium" th:text="|${loginEmployee.departmentType} · ${loginEmployee.departmentName}|"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">직급</div>
+                                        <span class="fw-medium" th:if="${loginEmployee.level == 'lv1'}">사원</span>
+                                        <span class="fw-medium" th:if="${loginEmployee.level == 'lv2'}">대리</span>
+                                        <span class="fw-medium" th:if="${loginEmployee.level == 'lv3'}">과장</span>
+                                        <span class="fw-medium" th:if="${loginEmployee.level == 'lv4'}">차장</span>
+                                        <span class="fw-medium" th:if="${loginEmployee.level == 'lv5'}">부장</span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">가입일시</div>
+                                        <div class="fw-medium" th:text="${#temporals.format(loginEmployee.createdAt, 'yyyy/MM/dd HH:mm:ss')}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">사원등록 상태</div>
+                                        <span class="badge bg-blue-lt" th:if="${loginEmployee.approvalStatus == 'PENDING'}">#사원등록 보류</span>
+                                        <span class="badge bg-green-lt" th:if="${loginEmployee.approvalStatus == 'APPROVED'}">#사원등록 승인</span>
+                                        <span class="badge bg-red-lt" th:if="${loginEmployee.approvalStatus == 'REJECTED'}">#사원등록 거절</span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">재직 상태</div>
+                                        <span class="badge bg-green-lt" th:if="${loginEmployee.employmentStatus == 'EMPLOYED'}">재직중</span>
+                                        <span class="badge bg-blue-lt" th:if="${loginEmployee.employmentStatus == 'ON_LEAVE'}">휴가중</span>
+                                        <span class="badge bg-red-lt" th:if="${loginEmployee.employmentStatus == 'RESIGNED'}">퇴사</span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">퇴사일시</div>
+                                        <div class="fw-medium badge bg-green-lt " th:if="${loginEmployee.resignedAt == null}">재직중</div>
+                                        <div class="fw-medium" th:if="${loginEmployee.resignedAt != null}" th:text="${#temporals.format(loginEmployee.resignedAt, 'yyyy/MM/dd HH:mm:ss')}"></div>
+
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">권한</div>
+                                        <span class="badge bg-secondary-lt" th:if="${loginEmployee.role == 'ADMIN'}">관리자</span>
+                                        <span class="badge bg-secondary-lt" th:if="${loginEmployee.role == 'EMPLOYEE'}">비관리자</span>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 오른쪽 영역 -->
+                    <div class="col-lg-8">
+
+                        <!-- 기본 정보 + 주소 정보 -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <div>
+                                    <h3 class="card-title">기본 정보</h3>
+                                    <div class="text-secondary mt-1">등록된 사원 기본 정보와 주소 정보입니다.</div>
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="row g-4">
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">사번</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.employeeNum}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">아이디</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.loginId}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">이름</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.employeeName}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">비밀번호</div>
+                                        <div class="fw-medium">••••••••</div>
+                                        <small class="text-secondary">보안을 위해 비밀번호는 표시되지 않습니다.</small>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">성별</div>
+                                        <div class="fw-medium" th:if="${loginEmployee.gender.name() == 'M'}">남성</div>
+                                        <div class="fw-medium" th:if="${loginEmployee.gender.name() == 'F'}">여성</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="text-secondary small mb-1">생년월일</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.birthDate}"></div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <hr class="my-1">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="text-secondary small mb-1">우편번호</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.postalCode}"></div>
+                                    </div>
+
+                                    <div class="col-md-8">
+                                        <div class="text-secondary small mb-1">도로명 주소</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.roadAddress}"></div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="text-secondary small mb-1">상세주소</div>
+                                        <div class="fw-medium" th:text="${loginEmployee.detailAddress}"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 정보 수정 -->
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-end">
+                                    <a th:href="@{/openMyPageModify}" class="btn btn-primary">정보 수정</a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>

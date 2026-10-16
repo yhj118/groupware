@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>기안서 상세보기</title>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <script th:src="@{/js/approval-edit.js}" defer></script>
+</head>
+<body style="margin:0">
+<section class="proposal-detail-root" th:fragment="detail" data-approval-detail th:attr="data-approval-id=${viewApprovalData.approvalId}" th:with="canProcessApproval=${loginEmployee != null and viewApprovalData.approverEmployeeId == loginEmployee.employeeId and viewApprovalData.approvalStatus == 'PENDING'}">
+    <style>
+        .proposal-detail-root { --proposal-border: var(--tblr-border-color, #e2e8f0); --proposal-surface: var(--tblr-bg-surface, #fff); --proposal-muted: var(--tblr-secondary, #667382); max-width: 1060px; margin: 0 auto; padding: 28px; color: var(--tblr-body-color, #182433); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .proposal-detail-root * { box-sizing: border-box; }
+        .proposal-detail-root .proposal-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .proposal-detail-root .proposal-eyebrow { color: var(--proposal-muted); font-size: 12px; letter-spacing: .08em; font-weight: 600; }
+        .proposal-detail-root .proposal-document-number { margin-top: 5px; color: var(--proposal-muted); font-size: 13px; }
+        .proposal-detail-root .proposal-status { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; background: #fff4d7; color: #916200; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .proposal-detail-root .proposal-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .proposal-detail-root .proposal-status.is-approved { background: #e9f7ee; color: #23834b; }
+        .proposal-detail-root .proposal-status.is-rejected { background: #fdeceb; color: #c43c39; }
+        .proposal-detail-root .proposal-paper { background: var(--proposal-surface); border: 1px solid var(--proposal-border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px #18243304; }
+        .proposal-detail-root .proposal-paper-header { padding: 28px 30px; border-bottom: 1px solid var(--proposal-border); }
+        .proposal-detail-root .proposal-form-name { margin-bottom: 9px; color: #4263b3; font-size: 13px; font-weight: 600; }
+        .proposal-detail-root .proposal-document-title { margin: 0; font-size: 25px; font-weight: 700; line-height: 1.45; overflow-wrap: anywhere; }
+        .proposal-detail-root .proposal-metadata { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 22px 30px; gap: 22px; border-bottom: 1px solid var(--proposal-border); }
+        .proposal-detail-root .proposal-label { display: block; margin-bottom: 8px; color: var(--proposal-muted); font-size: 12px; font-weight: 500; }
+        .proposal-detail-root .proposal-value { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+        .proposal-detail-root .proposal-dates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 18px 30px; gap: 18px; background: var(--tblr-bg-surface-secondary, #f8fafc); border-bottom: 1px solid var(--proposal-border); }
+        .proposal-detail-root .proposal-date { font-size: 13px; font-variant-numeric: tabular-nums; }
+        .proposal-detail-root .proposal-content-section { padding: 26px 30px; border-bottom: 1px solid var(--proposal-border); }
+        .proposal-detail-root .proposal-content-section:last-child { border-bottom: 0; }
+        .proposal-detail-root .proposal-section-title { margin: 0 0 14px; font-size: 15px; font-weight: 700; }
+        .proposal-detail-root .proposal-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.85; font-size: 14px; }
+        .proposal-detail-root .proposal-files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .proposal-detail-root .proposal-file { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--proposal-border); border-radius: 8px; color: inherit; text-decoration: none; transition: border-color .15s, background .15s; }
+        .proposal-detail-root .proposal-file:hover { border-color: #7899df; background: var(--tblr-bg-surface-secondary, #f8fafc); color: inherit; }
+        .proposal-detail-root .proposal-file:focus-visible { outline: 2px solid #4263b3; outline-offset: 3px; }
+        .proposal-detail-root .proposal-file-icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 44px; border-radius: 7px; background: #edf3ff; color: #4263b3; }
+        .proposal-detail-root .proposal-file-name { display: block; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+        .proposal-detail-root .proposal-file-size { display: block; margin-top: 4px; color: var(--proposal-muted); font-size: 12px; }
+        .proposal-detail-root .proposal-file-info { flex: 1; min-width: 0; }
+        .proposal-detail-root .proposal-download { flex-shrink: 0; color: var(--proposal-muted); }
+        .proposal-detail-root .proposal-empty { margin: 0; color: var(--proposal-muted); font-size: 13px; }
+        .proposal-detail-root .proposal-opinion { border-left: 3px solid #a5b8df; padding: 14px 18px; border-radius: 0 6px 6px 0; background: var(--tblr-bg-surface-secondary, #f8fafc); }
+        .proposal-detail-root .proposal-footnote { margin: 16px 0 0; color: var(--proposal-muted); font-size: 12px; text-align: right; }
+        @media (max-width: 760px) {
+            .proposal-detail-root { padding: 16px; }
+            .proposal-detail-root .proposal-paper-header, .proposal-detail-root .proposal-content-section { padding: 22px 20px; }
+            .proposal-detail-root .proposal-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 20px; }
+            .proposal-detail-root .proposal-dates { grid-template-columns: 1fr; padding: 18px 20px; gap: 14px; }
+            .proposal-detail-root .proposal-files { grid-template-columns: 1fr; }
+            .proposal-detail-root .proposal-document-title { font-size: 21px; }
+        }
+        .proposal-detail-root .approval-detail-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 20px 30px; }
+        .proposal-detail-root .approval-edit-button { display: inline-flex; align-items: center; justify-content: center; min-width: 88px; min-height: 40px; padding: 8px 20px; border: 1px solid var(--tblr-primary, #206bc4); border-radius: 6px; background: transparent; color: var(--tblr-primary, #206bc4); font-size: 14px; font-weight: 600; text-decoration: none; transition: background .15s, color .15s; }
+        .proposal-detail-root .approval-edit-button:hover { background: var(--tblr-primary, #206bc4); color: #fff; }
+        .proposal-detail-root .approval-edit-button:focus-visible { outline: 2px solid var(--tblr-primary, #206bc4); outline-offset: 3px; }
+        .proposal-detail-root .approval-delete-form { margin: 0; }
+        .proposal-detail-root .approval-delete-button { min-width: 88px; min-height: 40px; padding: 8px 20px; border: 1px solid var(--tblr-danger, #d63939); border-radius: 6px; background: transparent; color: var(--tblr-danger, #d63939); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .proposal-detail-root .approval-delete-button:hover { background: var(--tblr-danger, #d63939); color: #fff; }
+        .proposal-detail-root .approval-delete-button:focus-visible { outline: 2px solid var(--tblr-danger, #d63939); outline-offset: 3px; }
+        .proposal-detail-root .approval-delete-button:disabled { opacity: .5; cursor: not-allowed; }
+        /* 결재자 전용 승인 · 반려 입력폼 */
+        .proposal-detail-root .approval-status-form { margin: 0; padding: 20px; border: 1px solid var(--tblr-border-color, #dadfe5); border-radius: 10px; background: var(--tblr-bg-surface-secondary, #f6f8fb); }
+        .proposal-detail-root .approval-status-description { margin: 0 0 16px; color: var(--tblr-secondary, #667382); font-size: 13px; line-height: 1.6; }
+        .proposal-detail-root .approval-status-comment { width: 100%; min-height: 120px; resize: vertical; }
+        .proposal-detail-root .approval-status-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+        .proposal-detail-root .approval-status-buttons .btn { min-width: 88px; min-height: 40px; }
+        /* 승인 문서: 결재 상태 왼쪽 엑셀 아이콘 */
+        .proposal-detail-root .approval-status-tools { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .proposal-detail-root .approval-excel-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid #b3dcc6; border-radius: 8px; background: #e9f7ee; color: #217346; }
+        .proposal-detail-root .approval-excel-icon svg { display: block; }
+    </style>
+
+    <!-- 문서 번호와 결재 상태 -->
+    <div class="proposal-heading">
+        <div>
+            <div class="proposal-eyebrow">ELECTRONIC APPROVAL</div>
+            <div class="proposal-document-number" th:text="${'문서 번호 · ' + viewApprovalData.approvalId}"></div>
+        </div>
+        <div class="approval-status-tools">
+            <a class="approval-excel-icon" th:if="${viewApprovalData.approvalStatus == 'APPROVE'}" th:href="@{/downloadProposalExcel(approvalId=${viewApprovalData.approvalId}, keyType=${viewApprovalData.eaType})}" aria-label="기안서 엑셀 다운로드" title="엑셀 다운로드">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="10" y="3" width="11" height="18" rx="2" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M14 8h4M14 12h4M14 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <rect x="2" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+                    <path d="m5.5 9.5 5 5m0-5-5 5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+            </a>
+            <span class="proposal-status" th:classappend="${viewApprovalData.approvalStatus == 'APPROVE' ? 'is-approved' : (viewApprovalData.approvalStatus == 'REJECT' ? 'is-rejected' : '')}"
+                                          th:text="${viewApprovalData.approvalStatus == 'PENDING' ? '결재 대기' : (viewApprovalData.approvalStatus == 'APPROVE' ? '승인 완료' : (viewApprovalData.approvalStatus == 'REJECT' ? '반려' : viewApprovalData.approvalStatus))}"></span>
+        </div>
+    </div>
+
+    <article class="proposal-paper">
+        <!-- 제목 -->
+        <header class="proposal-paper-header">
+            <div class="proposal-form-name">기안서</div>
+            <h2 class="proposal-document-title" th:text="${viewApprovalData.proposalTitle != null and !#strings.isEmpty(viewApprovalData.proposalTitle) ? viewApprovalData.proposalTitle : '제목 없음'}"></h2>
+        </header>
+
+        <!-- 작성자와 결재자 정보 -->
+        <div class="proposal-metadata">
+            <div><span class="proposal-label">기안 부서</span><div class="proposal-value" th:text="${infoByEmployeeId.departmentType != null ? infoByEmployeeId.departmentType : '—'}"></div></div>
+            <div><span class="proposal-label">기안 팀</span><div class="proposal-value" th:text="${infoByEmployeeId.departmentName != null ? infoByEmployeeId.departmentName : '—'}"></div></div>
+            <div><span class="proposal-label">기안자</span><div class="proposal-value" th:text="${viewApprovalData.employeeName != null ? viewApprovalData.employeeName : '—'}"></div></div>
+            <div><span class="proposal-label">결재자</span><div class="proposal-value" th:text="${viewApprovalData.approverName != null ? viewApprovalData.approverName : '—'}"></div></div>
+        </div>
+
+        <!-- 날짜 -->
+        <div class="proposal-dates">
+            <div><span class="proposal-label">작성일시</span><div class="proposal-date" th:text="${viewApprovalData.approvalWriteAt != null ? #temporals.format(viewApprovalData.approvalWriteAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div></div>
+            <div><span class="proposal-label">수정일시</span><div class="proposal-date" th:text="${viewApprovalData.approvalUpdateAt != null ? #temporals.format(viewApprovalData.approvalUpdateAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div></div>
+            <div><span class="proposal-label">처리일시</span><div class="proposal-date" th:text="${viewApprovalData.approvalProcessedAt != null ? #temporals.format(viewApprovalData.approvalProcessedAt, 'yyyy-MM-dd HH:mm:ss') : '—'}"></div></div>
+        </div>
+
+        <!-- 기안 목적 -->
+        <section class="proposal-content-section">
+            <h3 class="proposal-section-title">기안 목적</h3>
+            <p class="proposal-text" th:text="${viewApprovalData.proposalPurpose != null and !#strings.isEmpty(viewApprovalData.proposalPurpose) ? viewApprovalData.proposalPurpose : '등록된 기안 목적이 없습니다.'}"></p>
+        </section>
+
+        <!-- 상세 내용 -->
+        <section class="proposal-content-section">
+            <h3 class="proposal-section-title">상세 내용</h3>
+            <div class="proposal-text" th:text="${viewApprovalData.proposalContent != null and !#strings.isEmpty(viewApprovalData.proposalContent) ? viewApprovalData.proposalContent : '등록된 상세 내용이 없습니다.'}"></div>
+        </section>
+
+        <!-- 첨부파일 -->
+        <section class="proposal-content-section">
+            <h3 class="proposal-section-title">첨부파일
+                <span style="color:var(--proposal-muted);font-weight:400" th:text="${viewAttachmentList != null ? '(' + #lists.size(viewAttachmentList) + ')' : '(0)'}"></span>
+            </h3>
+            <div class="proposal-files" th:if="${viewAttachmentList != null and !#lists.isEmpty(viewAttachmentList)}">
+                <a class="proposal-file" th:each="file : ${viewAttachmentList}" th:href="@{/downloadAttachment(attachmentId=${file.attachmentId})}" th:download="${file.originalFileName}">
+                    <span class="proposal-file-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>
+                    <span class="proposal-file-info">
+                <span class="proposal-file-name" th:text="${file.originalFileName}"></span>
+                <span class="proposal-file-size" th:text="${file.fileSize >= 1048576 ? #numbers.formatDecimal(file.fileSize / 1048576.0, 1, 1) + ' MB' : #numbers.formatDecimal(file.fileSize / 1024.0, 1, 1) + ' KB'}"></span>
+            </span>
+                    <svg class="proposal-download" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 17v4h14v-4"/></svg>
+                </a>
+            </div>
+            <p class="proposal-empty" th:if="${viewAttachmentList == null or #lists.isEmpty(viewAttachmentList)}">등록된 첨부파일이 없습니다.</p>
+        </section>
+
+
+        <!-- 결재자 코멘트 -->
+        <section class="proposal-content-section">
+            <h3 class="proposal-section-title">결재자 코멘트</h3>
+
+            <!-- 해당 문서의 결재자이며 결재 대기 상태일 때만 처리 가능 -->
+            <form class="approval-status-form" th:if="${canProcessApproval}" th:action="@{/updateStatus}" method="post">
+                <input type="hidden" name="approvalId" th:value="${viewApprovalData.approvalId}">
+                <p class="approval-status-description">코멘트를 입력한 후 승인 또는 반려를 선택해 주세요.</p>
+                <label class="form-label" for="proposalApprovalComment">코멘트 <span class="text-secondary fw-normal">(선택)</span></label>
+                <textarea class="form-control approval-status-comment" id="proposalApprovalComment" name="approvalComment" rows="4" placeholder="결재 의견이나 반려 사유를 입력하세요" th:text="${viewApprovalData.approvalComment}"></textarea>
+                <div class="approval-status-buttons">
+                    <button type="submit" class="btn btn-outline-danger" name="approvalStatus" value="REJECT">반려</button>
+                    <button type="submit" class="btn btn-success" name="approvalStatus" value="APPROVE">승인</button>
+                </div>
+            </form>
+
+            <!-- 작성자 또는 이미 처리된 문서에서는 저장된 코멘트만 표시 -->
+            <div class="proposal-opinion" th:unless="${canProcessApproval}">
+                <p class="proposal-text" th:text="${viewApprovalData.approvalComment != null and !#strings.isEmpty(viewApprovalData.approvalComment) ? viewApprovalData.approvalComment : '등록된 코멘트가 없습니다.'}"></p>
+            </div>
+        </section>
+        <div class="approval-detail-actions" th:if="${loginEmployee != null and viewApprovalData.writerEmployeeId == loginEmployee.employeeId and viewApprovalData.approvalStatus == 'PENDING'}">
+            <a class="btn btn-outline-primary approval-edit-button" th:href="@{/openUpdateApproval(approvalId=${viewApprovalData.approvalId},keyType=${viewApprovalData.eaType})}">수정</a>
+            <form class="approval-delete-form" th:action="@{/deleteApproval}" method="post" data-approval-delete-form>
+                <input type="hidden" name="approvalId" th:value="${viewApprovalData.approvalId}">
+                <button type="submit" class="btn btn-outline-danger approval-delete-button">삭제</button>
+            </form>
+        </div>
+    </article>
+    <p class="proposal-footnote">전자결재 문서 · 기안서</p>
+</section>
+</body>
+</html>

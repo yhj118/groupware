@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script>
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        .approval-form { max-width: 980px; margin: 0 auto; }
+        .required::after { margin-left: 3px; color: var(--tblr-danger); content: "*"; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div th:replace="~{fragments/sidebar :: sidebar('eApproval')}"></div>
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="page-pretitle">Approval</div>
+                <h2 class="page-title">출장 신청서 작성</h2>
+            </div>
+        </div>
+        <div class="page-body">
+            <div class="container-xl">
+                <form th:action="@{/writeBusinessTrip}" method="post" class="card approval-form">
+                    <div class="card-header"><h3 class="card-title">출장 신청서</h3></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label required">소속 부서</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentType}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">출장자</label>
+                                <div class="form-control-plaintext" th:text="${infoByEmployeeId.departmentName}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required">신청일</label>
+                                <input type="date" class="form-control" name="businessTripExecutionDate" th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" readonly>
+                            </div>
+                            <div class="col-12">
+                                <label for="businessTripTitle" class="form-label required">제목</label>
+                                <input type="text" class="form-control" id="businessTripTitle" name="businessTripTitle" maxlength="200" placeholder="출장 제목을 입력하세요" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">출장지</label>
+                                <input type="text" class="form-control" name="businessTripLocation" placeholder="출장 지역 또는 업체명">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">동행자</label>
+                                <input type="text" class="form-control" name="businessTripFriend" placeholder="동행자가 없으면 비워 두세요">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">출장 시작일</label>
+                                <input type="date" class="form-control" id="businessTripStart" name="businessTripStart">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">출장 종료일</label>
+                                <input type="date" class="form-control" id="businessTripEnd" name="businessTripEnd">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">출장 목적</label>
+                                <textarea class="form-control" name="businessTripPurpose" rows="4" placeholder="출장 목적을 입력하세요"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label required">출장 일정</label>
+                                <textarea class="form-control" name="businessTripContent" rows="6" placeholder="일자별 출장 일정을 입력하세요"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">예상 경비</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="businessTripAmount" min="0" placeholder="0">
+                                    <span class="input-group-text">원</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">교통수단</label>
+                                <select class="form-select" name="businessTripTransportation">
+                                    <option value="">선택하세요</option>
+                                    <option value="CAR">자동차</option>
+                                    <option value="TRAIN">기차</option>
+                                    <option value="AIRPLANE">항공</option>
+                                    <option value="ETC">기타</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a th:href="@{/approval/write}" class="btn btn-outline-secondary">취소</a>
+                        <button type="button" class="btn btn-outline-primary">임시저장</button>
+                        <button type="submit" class="btn btn-primary">결재 요청</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script>
+    // 출장 종료일 < 출장 시작
+    const businessTripStart = document.getElementById('businessTripStart');
+    const businessTripEnd = document.getElementById('businessTripEnd');
+
+    businessTripStart.addEventListener('change', function () {
+        businessTripEnd.min = this.value;
+
+        if (businessTripEnd.value && businessTripEnd.value < this.value) {
+            businessTripEnd.value = '';
+        }
+    });
+</script>
+</body>
+</html>

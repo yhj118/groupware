@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script>
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-bs-theme", savedTheme);
+    </script>
+    <script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+    <link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('systemConfig')}"></div>
+
+    <div class="page-wrapper">
+
+        <!-- 페이지 헤더 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <h2 class="page-title">시스템 설정</h2>
+                        <div class="text-secondary mt-1">그룹웨어의 화면 환경을 설정합니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 페이지 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="row g-4">
+
+                    <!-- 설정 메뉴 -->
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="list-group list-group-flush">
+                                <a href="#" class="list-group-item list-group-item-action active">화면 설정</a>
+                                <a href="#" class="list-group-item list-group-item-action">알림 설정</a>
+                                <a href="#" class="list-group-item list-group-item-action">시스템 정보</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 설정 내용 -->
+                    <div class="col-md-9">
+                        <div class="card">
+
+                            <div class="card-header">
+                                <div>
+                                    <h3 class="card-title">화면 설정</h3>
+                                    <div class="text-secondary mt-1">그룹웨어 화면의 테마를 변경합니다.</div>
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+
+                                <label class="form-label mb-3">화면 모드</label>
+
+                                <div class="row g-3">
+
+                                    <!-- 라이트 모드 -->
+                                    <div class="col-md-6">
+                                        <label class="form-selectgroup-item w-100">
+                                            <input type="radio" name="theme" value="light" class="form-selectgroup-input" onchange="changeTheme('light')">
+
+                                            <span class="form-selectgroup-label d-flex align-items-center p-4">
+
+                                                <span class="me-3">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="4"></circle>
+                                                        <path d="M12 2v2"></path>
+                                                        <path d="M12 20v2"></path>
+                                                        <path d="m4.93 4.93 1.41 1.41"></path>
+                                                        <path d="m17.66 17.66 1.41 1.41"></path>
+                                                        <path d="M2 12h2"></path>
+                                                        <path d="M20 12h2"></path>
+                                                        <path d="m6.34 17.66-1.41 1.41"></path>
+                                                        <path d="m19.07 4.93-1.41 1.41"></path>
+                                                    </svg>
+                                                </span>
+
+                                                <span>
+                                                    <span class="fw-bold">라이트 모드</span>
+                                                    <span class="d-block text-secondary mt-1">밝은 화면 테마를 사용합니다.</span>
+                                                </span>
+
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <!-- 다크 모드 -->
+                                    <div class="col-md-6">
+                                        <label class="form-selectgroup-item w-100">
+                                            <input type="radio" name="theme" value="dark" class="form-selectgroup-input" onchange="changeTheme('dark')">
+
+                                            <span class="form-selectgroup-label d-flex align-items-center p-4">
+
+                                                <span class="me-3">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                                    </svg>
+                                                </span>
+
+                                                <span>
+                                                    <span class="fw-bold">다크 모드</span>
+                                                    <span class="d-block text-secondary mt-1">어두운 화면 테마를 사용합니다.</span>
+                                                </span>
+
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                </div>
+
+                                <hr class="my-4">
+
+                                <div class="d-flex align-items-center">
+                                    <div>
+                                        <div class="fw-bold">현재 설정</div>
+                                        <div class="text-secondary mt-1">선택한 화면 모드는 현재 브라우저에 저장됩니다.</div>
+                                    </div>
+
+                                    <div class="ms-auto">
+                                        <span id="currentTheme" class="badge bg-blue-lt"></span>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="card-footer text-end">
+                                <button type="button" class="btn btn-primary" onclick="saveTheme()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" class="me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                        <polyline points="7 3 7 8 15 8"></polyline>
+                                    </svg>
+                                    설정 저장
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+
+<script>
+    function changeTheme(theme) {
+        document.documentElement.setAttribute("data-bs-theme", theme);
+        updateCurrentTheme(theme);
+    }
+
+    function saveTheme() {
+        const selectedTheme = document.querySelector('input[name="theme"]:checked');
+
+        if (!selectedTheme) {
+            alert("화면 모드를 선택해주세요.");
+            return;
+        }
+
+        localStorage.setItem("theme", selectedTheme.value);
+        alert("설정이 저장되었습니다.");
+    }
+
+    function updateCurrentTheme(theme) {
+        const currentTheme = document.getElementById("currentTheme");
+
+        if (theme === "dark") {
+            currentTheme.textContent = "다크 모드";
+        } else {
+            currentTheme.textContent = "라이트 모드";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const savedTheme = localStorage.getItem("theme") || "light";
+
+        document.documentElement.setAttribute("data-bs-theme", savedTheme);
+
+        const radio = document.querySelector('input[name="theme"][value="' + savedTheme + '"]');
+
+        if (radio) {
+            radio.checked = true;
+        }
+
+        updateCurrentTheme(savedTheme);
+    });
+</script>
+
+</body>
+</html>

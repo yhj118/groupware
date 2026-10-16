@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.yhj118.groupware.main.MainMapper">
+
+
+    <!-- 공지 개수 -->
+    <select id="countByCommon" resultType="int">
+        SELECT COUNT(*) AS common_count
+        FROM schedule
+        WHERE schedule_type = 'COMMON'
+        AND schedule_start >= CURDATE()
+        AND schedule_end >= CURDATE();
+    </select>
+
+    <!-- 오늘 일정 개수 -->
+    <select id="countBySchedule" resultType="int">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE (schedule_type = 'PERSONAL' OR schedule_type = 'APPROVAL')
+        AND schedule_start &lt;= CURDATE() <!-- &lt;= == <== -->
+        AND schedule_end >= CURDATE()
+        AND employee_id = #{employeeId}
+    </select>
+
+    <!-- 내 업무 개수 -->
+    <select id="countByMyWork" resultType="int">
+        SELECT COUNT(*)
+        FROM electronic_approval AS ea
+        LEFT JOIN ea_approval_request AS ear ON ea.approval_id = ear.approval_id
+        LEFT JOIN ea_business_trip AS ebt ON ea.approval_id = ebt.approval_id
+        WHERE ea.writer_employee_id = #{employeeId}
+        AND
+        (
+        ea.approval_status = 'PENDING'
+        OR (
+        ea.approval_status = 'APPROVE'
+        AND ea.ea_type = 'APPROVAL_REQUEST'
+        AND ear.approval_request_execution_date >= CURDATE()
+        )
+        OR (
+        ea.approval_status = 'APPROVE'
+        AND ea.ea_type = 'BUSINESS_TRIP'
+        AND ebt.business_trip_end >= CURDATE()
+        )
+        )
+    </select>
+
+    <!-- 일정 공지사항 -->
+    <select id="scheduleNotice" resultType="io.github.yhj118.groupware.main.MainResponse">
+        SELECT
+            schedule_title AS noticeTitle,
+            schedule_content AS noticeContent,
+            created_at AS createdAt,
+            'SCHEDULE' AS noticeType
+        FROM schedule
+        WHERE schedule_type = 'COMMON'
+    </select>
+
+    <!-- 게시판 공지사항 -->
+    <select id="boardNotice" resultType="io.github.yhj118.groupware.main.MainResponse">
+        SELECT
+            title AS noticeTitle,
+            content AS noticeContent,
+            created_date AS createdAt,
+            'BOARD' AS noticeType
+        FROM gr_board
+        WHERE category = 'notice'
+    </select>
+
+    <!-- 오늘의 일정 -->
+    <select id="todaySchedule" resultType="io.github.yhj118.groupware.schedule.ScheduleResponse">
+        SELECT *
+        FROM schedule
+        WHERE employee_id = #{employeeId}
+        AND schedule_type IN ('PERSONAL', 'APPROVAL')
+        AND schedule_end >= CURDATE()
+        ORDER BY schedule_start ASC, schedule_id ASC
+        LIMIT 4
+    </select>
+
+
+
+</mapper>

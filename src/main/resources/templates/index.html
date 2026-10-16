@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+    <link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('index')}"></div>
+
+    <!-- 메인 영역 -->
+    <div class="page-wrapper">
+
+        <!-- 공통 Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 내용 -->
+        <div class="page-body">
+            <div class="container-xl">
+
+                <!-- 환영 메시지 -->
+                <div class="row mb-4">
+                    <div class="col">
+                        <div class="page-pretitle">Tuesday, August 18, 2026</div>
+                        <h2 class="page-title">안녕하세요,&nbsp;<span th:text="${loginEmployee.employeeName}"></span>&nbsp;님👋</h2>
+                    </div>
+                </div>
+
+                <!-- 요약 카드 -->
+                <div class="row row-cards mb-4">
+
+                    <!-- 결재 대기 -->
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="subheader">결재 대기</div>
+                                </div>
+
+                                <div class="h1 mb-3" th:text="${countStatus.countEmployeePending}"></div>
+
+                                <div class="d-flex mb-2">
+                                    <span class="text-secondary">처리해야 할 결재</span>
+                                </div>
+
+                                <a href="#" class="btn btn-outline-primary w-100">결재함 보기</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 새로운 공지 -->
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="subheader">새로운 공지</div>
+                                <div class="h1 mb-3" th:text="${countCommon}"></div>
+
+                                <div class="d-flex mb-2">
+                                    <span class="text-secondary">확인하지 않은 공지</span>
+                                </div>
+
+                                <a href="#" class="btn btn-outline-primary w-100">공지사항 보기</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 오늘 일정 -->
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="subheader">오늘 일정</div>
+                                <div class="h1 mb-3" th:text="${countSchedule}"></div>
+
+                                <div class="d-flex mb-2">
+                                    <span class="text-secondary">오늘 예정된 일정</span>
+                                </div>
+
+                                <a href="#" class="btn btn-outline-primary w-100">일정 확인</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 내 업무 -->
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="subheader">내 업무</div>
+                                <div class="h1 mb-3" th:text="${countByMyWork}"></div>
+
+                                <div class="d-flex mb-2">
+                                    <span class="text-secondary">진행 중인 업무</span>
+                                </div>
+
+                                <a href="#" class="btn btn-outline-primary w-100">업무 확인</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 공지사항과 일정 -->
+                <div class="row row-cards mb-4">
+
+                    <!-- 공지사항 -->
+                    <div class="col-lg-7">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">공지사항</h3>
+                                <div class="card-actions">
+                                    <a href="#">전체보기</a>
+                                </div>
+                            </div>
+
+                            <div class="list-group list-group-flush">
+                                <a href="#" class="list-group-item list-group-item-action" th:each="notice : ${allNoticeList}">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="badge" th:classappend="${notice.noticeType == 'SCHEDULE'} ? 'bg-red' : 'bg-blue'" th:text="${notice.noticeType == 'SCHEDULE'} ? '일정' : '게시판'"></span>
+                                        </div>
+
+                                        <div class="col text-truncate">
+                                            <div class="text-reset d-block text-truncate"
+                                                 th:text="${notice.noticeTitle}">
+                                            </div>
+                                            <div class="d-block text-secondary text-truncate mt-n1"
+                                                 th:text="${notice.noticeContent}">
+                                            </div>
+                                        </div>
+                                        <div class="col-auto text-secondary"
+                                             th:text="${#temporals.format(notice.createdAt, 'MM.dd')}">
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="list-group-item text-secondary text-center" th:if="${#lists.isEmpty(allNoticeList)}">
+                                    등록된 공지사항이 없습니다.
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 오늘의 일정 -->
+                    <div class="col-lg-5">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">다가오는 일정</h3>
+
+                                <div class="card-actions">
+                                    <a href="#">일정관리</a>
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="divide-y">
+                                    <div class="row" th:each="schedule, stat : ${todaySchedule}" th:classappend="${!stat.first} ? 'pt-3' : ''">
+                                        <div class="col-auto">
+                                            <span class="avatar"
+                                                  th:text="${#temporals.format(schedule.scheduleStart, 'dd')}">
+                                            </span>
+                                        </div>
+
+                                        <div class="col">
+                                            <div class="text-truncate"
+                                                 th:text="${schedule.scheduleTitle}">
+                                            </div>
+                                            <div class="text-secondary"
+                                                 th:text="|${#temporals.format(schedule.scheduleStart, 'MM.dd')} ~ ${#temporals.format(schedule.scheduleEnd, 'MM.dd')}|">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-secondary text-center"
+                                         th:if="${#lists.isEmpty(todaySchedule)}">
+                                        오늘 예정된 일정이 없습니다.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 하단 영역 -->
+                <div class="row row-cards">
+
+                    <!-- 최근 결재 현황 -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">최근 결재 현황</h3>
+
+                                <div class="card-actions">
+                                    <a href="#">결재함</a>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead>
+                                    <tr>
+                                        <th>문서명</th>
+                                        <th>기안일</th>
+                                        <th>결재자</th>
+                                        <th>상태</th>
+                                    </tr>
+                                    </thead>
+
+                                    <tbody>
+                                    <tr th:each="approval : ${recentApprovalList}">
+                                        <td th:text="${approval.getEATitle()}"></td>
+                                        <td class="text-secondary" th:text="${#temporals.format(approval.approvalWriteAt, 'yyyy-MM-dd')}"></td>
+                                        <td th:text="${approval.approverName}"></td>
+                                        <td th:switch="${approval.approvalStatus}">
+                                            <span th:case="'PENDING'"class="badge bg-yellow text-yellow-fg">결재 대기</span>
+                                            <span th:case="'APPROVE'" class="badge bg-green text-green-fg">승인</span>
+                                            <span th:case="'REJECT'" class="badge bg-red text-red-fg">반려</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(recentApprovalList)}">
+                                        <td colspan="4" class="text-secondary text-center">
+                                            최근 결재 문서가 없습니다.
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 사원 정보 -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">내 사원 정보</h3>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="avatar avatar-xl me-3">유</span>
+
+                                    <div>
+                                        <h3 class="mb-1" th:text="${loginEmployee.employeeName}"></h3>
+                                        <div class="text-secondary" th:text="|${loginEmployee.departmentType} · ${loginEmployee.departmentName}|"></div>
+                                    </div>
+                                </div>
+
+                                <div class="datagrid">
+
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">사번</div>
+                                        <div class="datagrid-content" th:text="${loginEmployee.employeeNum}"></div>
+                                    </div>
+
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">직급</div>
+                                        <div class="datagrid-content" th:if="${loginEmployee.level == 'lv1'}"> 사원</div>
+                                        <div class="datagrid-content" th:if="${loginEmployee.level == 'lv2'}"> 대리</div>
+                                        <div class="datagrid-content" th:if="${loginEmployee.level == 'lv3'}"> 과장</div>
+                                        <div class="datagrid-content" th:if="${loginEmployee.level == 'lv4'}"> 차장</div>
+                                        <div class="datagrid-content" th:if="${loginEmployee.level == 'lv5'}"> 부장</div>
+                                    </div>
+
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">입사일</div>
+                                        <div class="datagrid-content" th:text="${#temporals.format(loginEmployee.createdAt, 'yyyy/MM/dd')}"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="card-footer">
+                                <a th:href="@{/openMyPage}" class="btn btn-primary w-100">내 정보 보기</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer footer-transparent d-print-none">
+            <div class="container-xl">
+                <div class="row text-center align-items-center flex-row-reverse">
+
+                    <div class="col-lg-auto ms-lg-auto">
+                        <ul class="list-inline list-inline-dots mb-0">
+                            <li class="list-inline-item">
+                                <a href="#" class="link-secondary">개인정보처리방침</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#" class="link-secondary">이용약관</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+                        <div class="text-secondary">© 2026 SK hynix Intranet Groupware</div>
+                    </div>
+
+                </div>
+            </div>
+        </footer>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>

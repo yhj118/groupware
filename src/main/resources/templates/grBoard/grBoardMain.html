@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+	<link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+	<link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+
+	<style>
+		.board-title {
+			color: inherit;
+			text-decoration: none;
+		}
+
+		.board-title:hover {
+			color: var(--tblr-primary);
+			text-decoration: underline;
+		}
+
+		.board-row-notice {
+			background: rgba(32, 107, 196, .08);
+		}
+
+		.table > :not(caption) > * > * {
+			vertical-align: middle;
+		}
+
+		.board-title-column {
+			width: 38%;
+		}
+
+		.board-date-column {
+			width: 180px;
+			white-space: nowrap;
+		}
+	</style>
+</head>
+
+<body>
+<div class="page">
+
+	<!-- 사이드바 -->
+	<div th:replace="~{fragments/sidebar :: sidebar('grBoard')}"></div>
+
+	<!-- 게시글 삭제 알림 -->
+	<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;" th:if="${deleteMessage != null}">
+		<div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+			<!-- 알림 제목 -->
+			<div class="toast-header">
+            <span class="avatar avatar-xs bg-green-lt text-green me-2">✓</span>
+				<strong class="me-auto">처리 완료</strong>
+				<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="닫기"></button>
+			</div>
+			<!-- 알림 내용 -->
+			<div class="toast-body" th:text="${deleteMessage}"> 글이 삭제되었습니다.</div>
+		</div>
+	</div>
+
+	<!-- 비밀글 조회 실패 알림 -->
+	<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;" th:if="${failedMessage != null}">
+		<div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+			<!-- 알림 제목 -->
+			<div class="toast-header">
+				<span class="avatar avatar-xs bg-green-lt text-green me-2">✓</span>
+				<strong class="me-auto">처리 완료</strong>
+				<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="닫기"></button>
+			</div>
+			<!-- 알림 내용 -->
+			<div class="toast-body" th:text="${failedMessage}"> 글이 삭제되었습니다.</div>
+		</div>
+	</div>
+
+	<!-- 메인 영역 -->
+	<div class="page-wrapper">
+
+		<!-- 공통 Navbar -->
+		<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+		<!-- 페이지 제목 -->
+		<div class="page-header d-print-none">
+			<div class="container-xl">
+				<div class="row g-2 align-items-center">
+					<div class="col">
+						<div class="page-pretitle">Community</div>
+						<h2 class="page-title">사내 게시판</h2>
+						<div class="text-secondary mt-1">공지사항과 사내 소식을 확인하고 자유롭게 의견을 나눌 수 있습니다.</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 페이지 본문 -->
+		<div class="page-body">
+			<div class="container-xl">
+
+				<!-- 게시판 분류 -->
+				<div class="mb-3">
+					<div class="btn-list">
+						<a th:href="@{/openGrBoardMain(category='ALL')}" class="btn" th:classappend="${params.category == 'ALL'} ? 'btn-primary' : 'btn-outline-secondary'">전체</a>
+						<a th:href="@{/openGrBoardMain(category='NOTICE')}" class="btn" th:classappend="${params.category == 'NOTICE'} ? 'btn-primary' : 'btn-outline-secondary'">공지사항</a>
+						<a th:href="@{/openGrBoardMain(category='FREE')}" class="btn" th:classappend="${params.category == 'FREE'} ? 'btn-primary' : 'btn-outline-secondary'">자유게시판</a>
+						<a th:href="@{/openGrBoardMain(category='WORK')}" class="btn" th:classappend="${params.category == 'WORK'} ? 'btn-primary' : 'btn-outline-secondary'">업무공유</a>
+						<a th:href="@{/openGrBoardMain(category='ETC')}" class="btn" th:classappend="${params.category == 'ETC'} ? 'btn-primary' : 'btn-outline-secondary'">기타</a>
+					</div>
+				</div>
+
+				<!-- 검색 영역 -->
+				<div class="card mb-3">
+					<div class="card-body">
+						<form th:action="@{/openGrBoardMain}" method="get">
+							<div class="row g-2 align-items-center">
+
+								<!-- 검색 조건 -->
+								<div class="col-md-3">
+									<select class="form-select" name="searchType" aria-label="검색 조건">
+										<option value="titleContent" th:selected="${params.searchType == 'titleContent'}">제목 + 내용</option>
+										<option value="title" th:selected="${params.searchType == 'title'}">제목</option>
+										<option value="content" th:selected="${params.searchType == 'content'}">내용</option>
+										<option value="writer" th:selected="${params.searchType == 'writer'}">작성자</option>
+									</select>
+								</div>
+
+								<!-- 검색어 -->
+								<div class="col-md">
+									<input type="search" class="form-control" name="keyword" th:value="${params.keyword}" placeholder="검색어를 입력하세요" aria-label="게시글 검색어">
+								</div>
+
+								<!-- 검색 버튼 -->
+								<div class="col-md-auto">
+									<button type="submit" class="btn btn-secondary w-100">검색</button>
+								</div>
+
+								<!-- 현재 카테고리 유지 -->
+								<input type="hidden" name="category" th:value="${params.category}">
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<!-- 게시글 목록 -->
+				<div class="card">
+					<div class="card-header">
+						<div>
+							<h3 class="card-title">전체 게시글</h3>
+							<div class="text-secondary mt-1">총 <span th:text="${pagination.totalCount}">0</span>개의 게시글이 있습니다.</div>
+						</div>
+					</div>
+
+					<div class="table-responsive">
+						<table class="table table-vcenter card-table table-hover">
+							<thead>
+							<tr>
+								<th class="text-center" style="width: 80px;">번호</th>
+								<th class="text-center" style="width: 110px;">분류</th>
+								<th class="text-center" style="width: 130px;">부서</th>
+								<th class="board-title-column">제목</th>
+								<th class="text-center" style="width: 120px;">작성자</th>
+								<th class="text-center board-date-column">작성일</th>
+								<th class="text-center" style="width: 90px;">조회</th>
+							</tr>
+							</thead>
+
+							<tbody>
+								<tr th:each="board : ${grBoardList}" th:classappend="${board.category == 'NOTICE' ? 'board-row-notice' : ''}">
+									<td class="text-center" th:text="${board.rowNum}"></td>
+
+									<td class="text-center">
+										<span class="badge bg-blue-lt" th:if="${board.category == 'NOTICE'}">공지사항</span>
+										<span class="badge bg-green-lt" th:if="${board.category == 'FREE'}">자유게시판</span>
+										<span class="badge bg-yellow-lt" th:if="${board.category == 'WORK'}">업무공유</span>
+										<span class="badge bg-secondary-lt" th:if="${board.category == 'ETC'}">기타</span>
+									</td>
+
+									<td class="text-center text-secondary" th:text="${board.departmentName}"></td>
+
+									<td class="board-title-column">
+										<a th:href="@{/openGrBoardView(grBoardId=${board.grBoardId}, category=${params.category}, page=${params.page}, searchType=${params.searchType}, keyword=${params.keyword})}"
+													class="board-title fw-semibold" th:text="${board.title}"></a>
+
+										<!-- 비밀글 아이콘 -->
+										<svg th:if="${board.secretYn == true}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-1 text-secondary">
+											<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+											<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+										</svg>
+
+										<!-- 48시간 이내 새 글 -->
+										<span class="badge bg-red-lt ms-2" th:if="${board.createdDate.isAfter(#temporals.createNow().minusHours(48))}">N</span>
+									</td>
+
+									<td class="text-center" th:text="${board.employeeName}"></td>
+									<td class="text-center text-secondary board-date-column" th:text="${#temporals.format(board.createdDate, 'yyyy/MM/dd HH:mm:ss')}"></td>
+									<td class="text-center text-secondary" th:text="${board.viewCnt}"></td>
+								</tr>
+
+								<!-- 게시글이 없을 때 -->
+								<tr th:if="${#lists.isEmpty(grBoardList)}">
+									<td colspan="7" class="text-center text-secondary py-5">조회된 게시글이 없습니다.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<!-- 카드 하단 -->
+					<div class="card-footer">
+						<div class="row align-items-center w-100">
+
+							<!-- 페이징 중앙 정렬을 위한 왼쪽 여백 -->
+							<div class="col"></div>
+
+							<!-- 페이징 버튼 -->
+							<div class="col-auto">
+								<ul class="pagination m-0" th:if="${pagination != null and pagination.totalPage > 0}">
+
+									<!-- 이전 페이지 묶음 -->
+									<li class="page-item" th:if="${pagination.existPrevPage}"> <!-- 이전페이지 묶음이 있다면. -->
+										<a class="page-link" th:href="@{/openGrBoardMain(category=${params.category}, page=${pagination.prevPage},
+																						 searchType=${params.searchType}, keyword=${params.keyword})}">이전</a>
+									</li>
+
+									<!-- 페이지 번호 -->
+									<li class="page-item" th:each="pageNumber : ${#numbers.sequence(pagination.startPage, pagination.endPage)}"
+														  th:classappend="${pageNumber == pagination.page} ? 'active' : ''">
+										<a class="page-link" th:href="@{/openGrBoardMain(category=${params.category}, page=${pageNumber}, searchType=${params.searchType}, keyword=${params.keyword})}"
+										   					 th:text="${pageNumber}">1</a>
+									</li>
+
+									<!-- 다음 페이지 묶음 -->
+									<li class="page-item" th:if="${pagination.existNextPage}">
+										<a class="page-link" th:href="@{/openGrBoardMain(category=${params.category}, page=${pagination.nextPage},
+																						 searchType=${params.searchType}, keyword=${params.keyword})}">다음</a>
+									</li>
+
+								</ul>
+							</div>
+
+							<!-- 글쓰기 버튼 -->
+							<div class="col d-flex justify-content-end">
+								<a th:href="@{/openGrBoardWrite}" class="btn btn-primary">글쓰기</a>
+							</div>
+
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+    <link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('employee')}"></div>
+
+    <!-- 메인 영역 -->
+    <div class="page-wrapper">
+
+        <!-- 공통 Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">My Page</div>
+                        <h2 class="page-title">내 정보 수정</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div class="container-xl">
+
+                <form th:action="@{/goEmpModify}" method="post" id="modifyForm" enctype="multipart/form-data">
+                    <div class="row row-cards">
+
+                        <!-- 왼쪽 프로필 -->
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <img class="avatar avatar-2xl mb-3" th:src="${loginEmployee.profileImgPath}" alt="프로필 사진">
+                                    <h2 class="mb-1" th:text="${loginEmployee.employeeName}"></h2>
+                                    <div class="text-secondary mb-3" th:text="${loginEmployee.employeeNum}"></div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="profileImg">프로필 사진 변경</label>
+                                        <input type="file" class="form-control" id="profileImg" name="profileImg" accept="image/jpeg,image/png">
+                                    </div>
+
+                                    <small class="text-secondary">JPG, JPEG, PNG 파일만 업로드할 수 있습니다.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 오른쪽 수정 영역 -->
+                        <div class="col-lg-8">
+
+                            <!-- 기본 정보 -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <div>
+                                        <h3 class="card-title">기본 정보</h3>
+                                        <div class="text-secondary mt-1">수정 가능한 기본 정보입니다.</div>
+                                    </div>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="row g-4">
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">사번</label>
+                                            <input type="text" class="form-control" th:value="${loginEmployee.employeeNum}" readonly disabled>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="form-label">아이디</label>
+                                                <span id="loginIdCheck"></span>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <input type="text" class="form-control" id="loginId" name="loginId" th:value="${loginEmployee.loginId}">
+                                                <button type="button" class="btn btn-outline-secondary flex-shrink-0" id="checkId">중복확인</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label d-flex">
+                                                <span>이름</span>
+                                                <span class="text-danger ms-auto" id="checkName"></span>
+                                            </label>
+                                            <input type="text" class="form-control" id="employeeName" name="employeeName" th:value="${loginEmployee.employeeName}">
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">성별</label>
+                                            <select class="form-select" name="gender">
+                                                <option value="M" th:selected="${loginEmployee.gender.name() == 'M'}">남성</option>
+                                                <option value="F" th:selected="${loginEmployee.gender.name() == 'F'}">여성</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">생년월일</label>
+                                            <input type="date" class="form-control" name="birthDate" th:value="${loginEmployee.birthDate}">
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">부서</label>
+                                            <input type="text" class="form-control" th:value="${loginEmployee.departmentName}" readonly disabled>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 주소 정보 -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h3 class="card-title">주소 정보</h3>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="row g-4">
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">우편번호</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="postalCode" name="postalCode" th:value="${loginEmployee.postalCode}">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-8">
+                                            <label class="form-label">도로명 주소</label>
+                                            <input type="text" class="form-control" id="roadAdd" name="roadAddress" th:value="${loginEmployee.roadAddress}">
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">상세주소</label>
+                                            <input type="text" class="form-control" id="detailAdd" name="detailAddress" th:value="${loginEmployee.detailAddress}">
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 비밀번호 변경 -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <div>
+                                        <h3 class="card-title">비밀번호 변경</h3>
+                                        <div class="text-secondary mt-1">비밀번호를 변경하지 않으려면 입력하지 않아도 됩니다.</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label d-flex">새 비밀번호
+                                                <span class="margin-right me-6" id="passwordConfirmCheck"></span>
+                                            </label>
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="********">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">새 비밀번호 확인</label>
+                                            <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" placeholder="********">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 회사 정보 -->
+                            <div class="card">
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="/openMyPage" class="btn btn-outline-secondary">취소</a>
+                                        <button type="submit" class="btn btn-primary">수정 완료</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+<script>
+
+    const checkId = document.getElementById("checkId");
+    const loginId = document.getElementById("loginId");
+    const loginIdCheck = document.getElementById("loginIdCheck");
+    let isLoginIdCheck = true; // 중복확인 상태를 true로 함으로써 중복확인을 한 상태라는 걸로 선언
+
+    const password = document.getElementById("password");
+    const passwordConfirm = document.getElementById("passwordConfirm");
+    const passwordConfirmCheck = document.getElementById("passwordConfirmCheck");
+    const modifyForm = document.getElementById("modifyForm");
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()])[a-zA-Z\d!@#$%^&*()]{8,12}$/;
+
+    const checkName = document.getElementById("checkName");
+    const employeeName = document.getElementById("employeeName");
+    const nameRegex = /^[가-힣]{2,}$/;
+
+    // 수정 버튼 제출
+    // form의 submit을 할 시점에 검사: 사용자가 가입버튼 클릭뿐만 아니라 Enter를 눌러도 submit이 발생하기 때문에 여기서 막는 게 효율적.
+    modifyForm.addEventListener("submit", function (event) {
+
+        // ID 중복체크
+        if (isLoginIdCheck === false) {
+            event.preventDefault(); // form 제출 거부
+            loginIdCheck.textContent = "ID 중복 확인을 확인해 주세요.";
+            loginIdCheck.className = "ms-auto text-danger";
+            return; // "submit" 함수 종료
+        }
+
+        // 비밀번호 정규식 및 중복 검사
+        if (password.value !== "") {
+            if (passwordRegex.test(password.value) === true) {
+                if (password.value !== passwordConfirm.value) {
+                    event.preventDefault();
+                    passwordConfirmCheck.textContent = "비밀번호가 일치하지 않습니다.";
+                    passwordConfirmCheck.className = "ms-auto text-danger";
+                    return;
+                } else {
+                    passwordConfirmCheck.textContent = "비밀번호가 일치합니다.";
+                    passwordConfirmCheck.className = "ms-auto text-success";
+                }
+            } else {
+                event.preventDefault();
+                passwordConfirmCheck.textContent = "특수문자를 포함하여 8~12글자로 작성해주세요.";
+                passwordConfirmCheck.className = "ms-auto text-danger";
+                return;
+            }
+        }
+
+
+        // 이름 정규식
+        if (nameRegex.test(employeeName.value) === false) {
+            event.preventDefault();
+            checkName.textContent = "이름은 두 글자 이상 입력해주세요.";
+            checkName.className = "ms-auto text-danger";
+            return;
+        }
+
+    }); // end signUpForm
+
+    // ID 중복 확인, ajax(비동기)
+    checkId.addEventListener("click", function () {
+        fetch("/loginIdCheck?loginId=" + loginId.value) // 요청할 url + 보낼 데이터
+            .then(response => response.json()) // 응답온 데이터를 JS에서 사용할 수 있는 json 데이터로 변환
+            .then(result => { // 변환된 json 데이터를 입맛에 맞게 처리
+                if (result === 0) {
+                    loginIdCheck.textContent = "사용 가능한 아이디입니다.";
+                    loginIdCheck.className = "ms-auto text-success";
+                    isLoginIdCheck = true;
+                } else {
+                    loginIdCheck.textContent = "중복된 아이디입니다.";
+                    loginIdCheck.className = "ms-auto text-danger";
+                    isLoginIdCheck = false;
+
+                    loginId.value = "";
+                    loginId.focus();
+                }
+            });
+    });
+
+    // ID 수정 시 중복확인 결과 무효화
+    // 사용자가 ID 수정할 경우 "input" 이벤트를 감지해 자동으로 함수 실행
+    loginId.addEventListener("input", function () {
+        isLoginIdCheck = false;
+        loginIdCheck.textContent = "";
+    });
+
+</script>
+</body>
+</html>

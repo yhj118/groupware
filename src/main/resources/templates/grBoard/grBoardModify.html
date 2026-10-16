@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+    <link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 공통 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('grBoard')}"></div>
+
+    <!-- 메인 영역 -->
+    <div class="page-wrapper">
+
+        <!-- 공통 Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Community</div>
+                        <h2 class="page-title">게시글 수정</h2>
+                        <div class="text-secondary mt-1">
+                            작성한 게시글의 내용을 수정합니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 페이지 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="card">
+
+                    <!-- 수정 Form -->
+                    <form th:action="@{/goGrBoardModify(grBoardId=${grBoardViewData.grBoardId})}" method="post">
+
+                        <!-- 게시글 식별번호 -->
+                        <input type="hidden" name="grBoardId" th:value="${grBoardViewData.grBoardId}">
+
+                        <div class="card-header">
+                            <h3 class="card-title">게시글 정보</h3>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row g-4">
+
+                                <!-- 작성자 -->
+                                <div class="col-md-6">
+                                    <label class="form-label" for="writer">작성자</label>
+                                    <input type="text" class="form-control bg-secondary-lt" id="writer" th:value="${grBoardViewData.employeeName}" readonly>
+                                    <small class="form-hint">
+                                        작성자는 변경할 수 없습니다.
+                                    </small>
+                                </div>
+
+                                <!-- 부서 -->
+                                <div class="col-md-6">
+                                    <label class="form-label" for="department">부서</label>
+                                    <input type="text" class="form-control bg-secondary-lt" id="department" th:value="${grBoardViewData.departmentName}" readonly>
+                                    <small class="form-hint">
+                                        소속 부서는 변경할 수 없습니다.
+                                    </small>
+                                </div>
+
+                                <!-- 분류 -->
+                                <div class="col-12">
+                                    <label class="form-label required" for="category">분류</label>
+                                    <select class="form-select" id="category" name="category"  required>
+                                        <option value="NOTICE" th:selected="${grBoardViewData.category == 'NOTICE'}">공지사항</option>
+                                        <option value="FREE" th:selected="${grBoardViewData.category == 'FREE'}">자유게시판</option>
+                                        <option value="WORK" th:selected="${grBoardViewData.category == 'WORK'}">업무공유</option>
+                                        <option value="ETC" th:selected="${grBoardViewData.category == 'ETC'}">기타</option>
+                                    </select>
+                                </div>
+
+                                <!-- 제목 -->
+                                <div class="col-12">
+                                    <label class="form-label required" for="title">제목</label>
+                                    <input type="text" class="form-control" id="title" name="title" th:value="${grBoardViewData.title}" maxlength="100" required>
+                                    <small class="form-hint">
+                                        제목은 최대 100자까지 입력할 수 있습니다.
+                                    </small>
+                                </div>
+
+                                <!-- 옵션 -->
+                                <div class="col-12">
+                                    <label class="form-label">게시글 옵션</label>
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="secretYn" name="secretYn" value="true" th:checked="${grBoardViewData.secretYn}">
+                                        <span class="form-check-label">비밀글</span>
+                                        <span class="form-check-description">
+											작성자와 관리자만 게시글을 확인할 수 있습니다.
+										</span>
+                                    </label>
+                                </div>
+
+                                <!-- 내용 -->
+                                <div class="col-12">
+                                    <label class="form-label required" for="content">내용</label>
+                                    <textarea class="form-control" id="content" name="content" rows="16" maxlength="3000" required th:text="${grBoardViewData.content}"></textarea>
+                                    <small class="form-hint">
+                                        내용은 최대 3,000자까지 입력할 수 있습니다.
+                                    </small>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- 버튼 영역 -->
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a th:href="@{/openGrBoardView(grBoardId=${grBoardViewData.grBoardId})}" class="btn btn-outline-secondary">취소</a>
+                                <button type="submit" class="btn btn-primary">수정 완료</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>

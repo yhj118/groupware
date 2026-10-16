@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script th:src="@{/js/common.js}"></script> <!-- 다크모드 적용 -->
+    <link rel="stylesheet" th:href="@{/tabler/css/tabler.min.css}"> <!-- tabler css -->
+    <link rel="stylesheet" th:href="@{/css/common.css}"> <!-- 다크모드 커스텀 -->
+</head>
+
+<body>
+<div class="page">
+
+    <!-- 공통 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('grBoard')}"></div>
+
+    <!-- 메인 영역 -->
+    <div class="page-wrapper">
+
+        <!-- 공통 Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+        <!-- 페이지 제목 -->
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Community</div>
+                        <h2 class="page-title">게시글 작성</h2>
+                        <div class="text-secondary mt-1">사내 구성원들과 공유할 게시글을 작성합니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 페이지 본문 -->
+        <div class="page-body">
+            <div class="container-xl">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+
+                        <!-- 게시글 등록 Form -->
+                        <form th:action="@{/goGrBoardWrite}" method="post">
+                            <div class="card">
+
+                                <div class="card-header">
+                                    <h3 class="card-title">게시글 정보</h3>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="row g-4">
+
+                                        <!-- 분류 -->
+                                        <div class="col-12">
+                                            <label class="form-label required" for="category">분류</label>
+
+                                            <select class="form-select" id="category" name="category" required>
+                                                <option value="">분류를 선택해주세요.</option>
+                                                <option value="NOTICE">공지사항</option>
+                                                <option value="FREE">자유글</option>
+                                                <option value="WORK">업무공유</option>
+                                                <option value="ETC">기타</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- 제목 -->
+                                        <div class="col-12">
+                                            <label class="form-label required" for="title">제목</label>
+
+                                            <input type="text" class="form-control" id="title" name="title" maxlength="100" placeholder="제목을 입력해주세요." required>
+                                        </div>
+
+                                        <!-- 옵션 -->
+                                        <div class="col-12">
+                                            <div class="d-flex gap-4">
+                                                <label class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="secretYn" name="secretYn" value="true">
+                                                    <span class="form-check-label">비밀글</span>
+                                                    <span class="form-check-description">작성자와 관리자만 확인할 수 있습니다.</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 내용 -->
+                                        <div class="col-12">
+                                            <label class="form-label required" for="content">내용</label>
+
+                                            <textarea class="form-control" id="content" name="content" rows="16" placeholder="내용을 입력해주세요." required></textarea>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- 버튼 영역 -->
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a th:href="@{/openGrBoardMain}" class="btn btn-outline-secondary">취소</a>
+                                        <button type="submit" class="btn btn-primary">게시글 등록</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/tabler/js/tabler.min.js}"></script>
+</body>
+</html>
